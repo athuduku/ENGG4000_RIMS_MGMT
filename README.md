@@ -44,6 +44,7 @@ Built with Django (backend) and HTML/CSS/JS (frontend), featuring secure authent
 
 2. **Add files and comment**
    ```bash
+   git status
    git add .
    git commit -m "COMMENTS"
 
