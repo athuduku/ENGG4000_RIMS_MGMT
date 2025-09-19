@@ -1,0 +1,19 @@
+# Virtual environment
+backend/venv/
+
+# Python cache
+__pycache__/
+*.pyc
+
+# SQLite database (local dev only)
+backend/db.sqlite3
+
+# Env variables
+.env
+
+# Node modules (if you add React frontend later)
+node_modules/
+
+# OS junk
+.DS_Store
+Thumbs.db
