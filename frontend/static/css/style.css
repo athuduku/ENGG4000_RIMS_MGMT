@@ -23,6 +23,7 @@ p {
 
 .container {
     max-width: 800px;
+    height: 300px;
     margin: 50px auto;
     padding: 20px;
     background: #fff;
