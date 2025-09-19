@@ -1,31 +1,26 @@
-/* Reset some defaults */
 body, h1, p {
     margin: 0;
     padding: 0;
     font-family: Arial, sans-serif;
 }
 
-/* Page background */
 body {
-    background-color: #f5f7fa;
+    background-color: rgba(18, 31, 70, 0.49);
     color: #333;
     line-height: 1.6;
     padding: 20px;
 }
 
-/* Header */
 h1 {
     color: #2c3e50;
     margin-bottom: 10px;
 }
 
-/* Paragraph */
 p {
     color: #555;
     font-size: 18px;
 }
 
-/* Add a container box */
 .container {
     max-width: 800px;
     margin: 50px auto;
