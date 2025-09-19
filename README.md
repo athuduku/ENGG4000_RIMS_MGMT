@@ -33,4 +33,20 @@ Built with Django (backend) and HTML/CSS/JS (frontend), featuring secure authent
    python manage.py runserver
    ```
    open http://127.0.0.1:8000/ in your browser.
-   
+
+
+## How to Push
+
+1. **Pull the latest changes from GitHub**
+   ```bash
+   git pull origin main
+   ```
+
+2. **Add files and comment**
+   ```bash
+   git add .
+   git commit -m "COMMENTS"
+
+3. **Push your changes**
+   ```bash
+   git push origin main
