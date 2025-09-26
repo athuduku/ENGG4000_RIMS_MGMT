@@ -1,16 +1,25 @@
 {% load static %}
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
-    <title>RIMS</title>
+    <meta charset="UTF-8">
+    <title>Dashboard</title>
     <link rel="stylesheet" href="{% static 'css/style.css' %}">
 </head>
 <body>
+    <div class="navbar">
+        <h1>Dashboard</h1>
+        <ul>
+            <li><a href="{% url 'home' %}">Home</a></li>
+            <li><a href="{% url 'form' %}">Add Report</a></li>
+            <li><a href="{% url 'view_reports' %}">View Reports</a></li>
+        </ul>
+    </div>
+
     <div class="container">
-        <h1>Welcome to RIMS</h1>
-        <p>Research Information Management System (RIMS) developed as part of ENGG4000. A full-stack web application for managing research data including publications, grants, student activities, and reporting.</p>
-        <br>
-        <p>Built with Django (backend) and HTML/CSS/JS (frontend), featuring secure authentication, role-based access, dynamic forms, and reporting tools.</p>
+        <h2>Welcome to the Dashboard</h2>
+        <a href="{% url 'form' %}" class="button">Add Report</a>
+        <a href="{% url 'view_reports' %}" class="button">View Reports</a>
     </div>
 </body>
 </html>

@@ -1,0 +1,64 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Add Report</title>
+    <link rel="stylesheet" href="{% static 'css/style.css' %}">
+</head>
+<body>
+    <div class="navbar">
+        <h1>Add Report</h1>
+        <ul>
+            <li><a href="{% url 'index' %}">Dashboard</a></li>
+            <li><a href="{% url 'view_reports' %}">View Reports</a></li>
+        </ul>
+    </div>
+
+    <div class="form-container">
+        <h2>New Report</h2>
+        <form id="reportForm">
+            <label>Report Name:</label>
+            <input type="text" id="report_name" required>
+
+            <label>Date:</label>
+            <input type="date" id="date" required>
+
+            <label>Authors:</label>
+            <input type="text" id="authors" required>
+
+            <label>Type:</label>
+            <input type="text" id="type" required>
+
+            <label>Subject:</label>
+            <input type="text" id="subject" required>
+
+            <label>Description:</label>
+            <textarea id="description" rows="4" required></textarea>
+
+            <button type="submit" class="button">Save Report</button>
+        </form>
+    </div>
+
+    <script>
+        document.getElementById("reportForm").addEventListener("submit", function(event) {
+            event.preventDefault();
+
+            const report = {
+                name: document.getElementById("report_name").value,
+                date: document.getElementById("date").value,
+                authors: document.getElementById("authors").value,
+                type: document.getElementById("type").value,
+                subject: document.getElementById("subject").value,
+                description: document.getElementById("description").value
+            };
+
+            let reports = JSON.parse(localStorage.getItem("reports")) || [];
+            reports.push(report);
+            localStorage.setItem("reports", JSON.stringify(reports));
+
+            window.location.href = "{% url 'view_reports' %}";
+        });
+    </script>
+</body>
+</html>
