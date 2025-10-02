@@ -1,10 +1,10 @@
 from django.shortcuts import render
 
+def dashboard_view(request):
+    return render(request, "dashboard.html")
+
 def index_view(request):
     return render(request, "index.html")
-
-def home_view(request):
-    return render(request, "home.html")
 
 def form_view(request):
     return render(request, "form.html")

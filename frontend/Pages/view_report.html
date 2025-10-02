@@ -5,124 +5,21 @@
     <meta charset="UTF-8">
     <title>Reports</title>
     <link rel="stylesheet" href="{% static 'css/style.css' %}">
-    <style>
-        .action-btn {
-            padding: 6px 12px;
-            margin: 2px;
-            border: none;
-            border-radius: 4px;
-            cursor: pointer;
-            font-size: 14px;
-        }
-        .delete-btn {
-            background-color: #e74c3c;
-            color: white;
-        }
-        .edit-btn {
-            background-color: #3498db;
-            color: white;
-        }
-        .delete-btn:hover { background-color: #c0392b; }
-        .edit-btn:hover { background-color: #2980b9; }
-    </style>
+    <link rel="icon" type="image/png" sizes="32x32" href="{% static 'assets/IBE-logo.png' %}">    
+    <script src="{% static 'js/report.js' %}" defer></script>
 </head>
 <body>
     <div class="navbar">
-        <h1>Reports</h1>
+        <img src="{% static 'assets/IBE-logo.png' %}" alt="IBE Logo" class="logo">
         <ul>
-            <li><a href="{% url 'index' %}">Dashboard</a></li>
+            <li><a href="{% url 'dashboard' %}">Dashboard</a></li>
             <li><a href="{% url 'form' %}">Add Report</a></li>
         </ul>
     </div>
 
     <div class="container">
-        <h2>All Reports</h2>
-        <table id="reportTable">
-            <tr>
-                <th>Name</th>
-                <th>Date</th>
-                <th>Authors</th>
-                <th>Type</th>
-                <th>Subject</th>
-                <th>Description</th>
-                <th>Actions</th>
-            </tr>
-        </table>
+        <h2 class="reprtHeader">All Reports</h2>
+        <div id="reportList"></div>
     </div>
-
-    <script>
-        function loadReports() {
-            let reports = JSON.parse(localStorage.getItem("reports")) || [];
-            const table = document.getElementById("reportTable");
-
-            // clear existing rows (except header)
-            table.innerHTML = `
-                <tr>
-                    <th>Name</th>
-                    <th>Date</th>
-                    <th>Authors</th>
-                    <th>Type</th>
-                    <th>Subject</th>
-                    <th>Description</th>
-                    <th>Actions</th>
-                </tr>`;
-
-            reports.forEach((report, index) => {
-                let row = table.insertRow();
-                row.insertCell(0).innerText = report.name;
-                row.insertCell(1).innerText = report.date;
-                row.insertCell(2).innerText = report.authors;
-                row.insertCell(3).innerText = report.type;
-                row.insertCell(4).innerText = report.subject;
-                row.insertCell(5).innerText = report.description;
-
-                let actions = row.insertCell(6);
-
-                // Edit button
-                let editBtn = document.createElement("button");
-                editBtn.innerText = "Edit";
-                editBtn.className = "action-btn edit-btn";
-                editBtn.onclick = function() { editReport(index); };
-
-                // Delete button
-                let deleteBtn = document.createElement("button");
-                deleteBtn.innerText = "Delete";
-                deleteBtn.className = "action-btn delete-btn";
-                deleteBtn.onclick = function() { deleteReport(index); };
-
-                actions.appendChild(editBtn);
-                actions.appendChild(deleteBtn);
-            });
-        }
-
-        function deleteReport(index) {
-            let reports = JSON.parse(localStorage.getItem("reports")) || [];
-            reports.splice(index, 1); // remove one item
-            localStorage.setItem("reports", JSON.stringify(reports));
-            loadReports(); // reload table
-        }
-
-        function editReport(index) {
-            let reports = JSON.parse(localStorage.getItem("reports")) || [];
-            let report = reports[index];
-
-            // Fill form values in prompt (quick way)
-            let name = prompt("Report Name:", report.name);
-            let date = prompt("Date:", report.date);
-            let authors = prompt("Authors:", report.authors);
-            let type = prompt("Type:", report.type);
-            let subject = prompt("Subject:", report.subject);
-            let description = prompt("Description:", report.description);
-
-            if (name && date && authors && type && subject && description) {
-                reports[index] = { name, date, authors, type, subject, description };
-                localStorage.setItem("reports", JSON.stringify(reports));
-                loadReports();
-            }
-        }
-
-        // Load on page start
-        loadReports();
-    </script>
 </body>
 </html>
