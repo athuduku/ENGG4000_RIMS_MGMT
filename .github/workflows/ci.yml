@@ -1,4 +1,4 @@
-name: Simple Django CI/CD
+name: Simple Django CI
 
 on:
   push:
@@ -17,7 +17,7 @@ jobs:
       - name: Set up Python
         uses: actions/setup-python@v5
         with:
-          python-version: '3.11'
+          python-version: "3.11"
 
       - name: Install dependencies
         run: |
@@ -27,7 +27,7 @@ jobs:
       - name: Run migrations
         run: |
           cd backend
-          python manage.py migrate
+          python manage.py migrate --noinput
 
       - name: Run tests
         run: |
