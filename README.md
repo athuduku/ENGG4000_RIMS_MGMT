@@ -51,3 +51,5 @@ Built with Django (backend) and HTML/CSS/JS (frontend), featuring secure authent
 3. **Push your changes**
    ```bash
    git push origin main
+
+;)
