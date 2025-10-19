@@ -75,7 +75,7 @@ body {
     font-weight: bold;
     position: relative;
     line-height: 1;
-    padding: 4px 0;              /* gives room for underline */
+    padding: 4px 0;
 }
 
 /* modern white underline on hover */
@@ -209,36 +209,6 @@ input[type="file"] {
     cursor: pointer;
 }
 
-
-/* ====== Tables ====== */
-table {
-    border-collapse: collapse;
-    width: 90%;
-    margin: 20px auto;
-    background: var(--table-bg);
-    border-radius: 5px;
-    overflow: hidden;
-    box-shadow: 0 2px 6px rgba(0,0,0,0.1);
-}
-
-th, td {
-    border: 1px solid var(--table-border-color);
-    padding: 12px;
-    text-align: center;
-}
-
-th {
-    background-color: var(--table-hd-color);
-    color: var(--color-white);
-    font-weight: bold;
-    cursor: pointer; /* show clickable */
-    position: relative;
-}
-
-th:hover {
-    background-color: #34495e;
-}
-
 .action-btn {
     padding: 6px 12px;
     margin: 2px;
@@ -277,7 +247,7 @@ th:hover {
 }
 
 
-/* ====== Report Cards (Scopus style) ====== */
+/* ====== Report ====== */
 .report-card {
     background: var(--color-white);
     border-radius: 8px;
@@ -369,6 +339,6 @@ th:hover {
 }
 
 .abstract-content.show {
-    max-height: 300px; /* big enough for your text */
+    max-height: 300px;
     opacity: 1;
 }
