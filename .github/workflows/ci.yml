@@ -1,40 +1,14 @@
-name: Django CI/CD Pipeline
+name: Simple Django CI/CD
 
 on:
   push:
     branches: [ main ]
   pull_request:
     branches: [ main ]
-  workflow_dispatch:
-    inputs:
-      deploy:
-        description: "Deploy after tests?"
-        type: boolean
-        default: true
-
-env:
-  POSTGRES_DB: app_test
-  POSTGRES_USER: postgres
-  POSTGRES_PASSWORD: postgres
-  DEBUG: 0
 
 jobs:
   build:
-    name: Build & Test
     runs-on: ubuntu-latest
-    services:
-      postgres:
-        image: postgres:14
-        env:
-          POSTGRES_USER: ${{ env.POSTGRES_USER }}
-          POSTGRES_PASSWORD: ${{ env.POSTGRES_PASSWORD }}
-          POSTGRES_DB: ${{ env.POSTGRES_DB }}
-        ports: ['5432:5432']
-        options: >-
-          --health-cmd="pg_isready -U postgres"
-          --health-interval=10s
-          --health-timeout=5s
-          --health-retries=5
 
     steps:
       - name: Checkout code
@@ -50,30 +24,12 @@ jobs:
           python -m pip install --upgrade pip
           pip install -r backend/requirements.txt
 
-      - name: Run Migrations
+      - name: Run migrations
         run: |
           cd backend
           python manage.py migrate
 
-      - name: Run Tests
+      - name: Run tests
         run: |
           cd backend
           python manage.py test
-
-  deploy:
-    name: Deploy to Render (or your host)
-    runs-on: ubuntu-latest
-    needs: build
-    environment:
-      name: production
-    if: github.event_name == 'push' && github.ref == 'refs/heads/main' && inputs.deploy == true
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v4
-        with:
-          fetch-depth: 1
-
-      - name: Trigger Render Deploy Hook
-        run: curl -fsSL -X POST "$RENDER_DEPLOY_HOOK"
-        env:
-          RENDER_DEPLOY_HOOK: ${{ secrets.RENDER_DEPLOY_HOOK }}
