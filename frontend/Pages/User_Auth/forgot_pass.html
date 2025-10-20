@@ -1,0 +1,53 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Forgot Password</title>
+  <link rel="stylesheet" href="{% static 'css/style.css' %}">
+  <link rel="icon" type="image/png" sizes="32x32" href="{% static 'assets/IBE-logo.png' %}">
+</head>
+<body>
+  <div class="navbar">
+    <img src="{% static 'assets/IBE-logo.png' %}" alt="IBE Logo" class="logo">
+    <ul>
+      <li><a href="{% url 'login' %}">Login</a></li>
+      <li><a href="{% url 'signup' %}">Sign Up</a></li>
+    </ul>
+  </div>
+
+  <div class="form-container">
+    <h2>Reset Password</h2>
+    <form id="resetForm">
+      <label>Email:</label>
+      <input type="email" id="email" required>
+
+      <label>New Password:</label>
+      <input type="password" id="newPassword" required>
+
+      <button type="submit" class="button">Reset Password</button>
+    </form>
+  </div>
+
+  <script>
+    document.getElementById("resetForm").addEventListener("submit", function(event) {
+      event.preventDefault();
+
+      const email = document.getElementById("email").value;
+      const newPassword = document.getElementById("newPassword").value;
+
+      let users = JSON.parse(localStorage.getItem("users")) || [];
+      let user = users.find(u => u.email === email);
+
+      if (user) {
+        user.password = newPassword;
+        localStorage.setItem("users", JSON.stringify(users));
+        alert("Password updated! Please login.");
+        window.location.href = "{% url 'login' %}";
+      } else {
+        alert("No user found with this email!");
+      }
+    });
+  </script>
+</body>
+</html>

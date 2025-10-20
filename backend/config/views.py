@@ -11,3 +11,12 @@ def form_view(request):
 
 def view_reports(request):
     return render(request, "view_report.html")
+
+def signup_view(request): 
+    return render(request, "User_Auth/signup.html")
+
+def login_view(request): 
+    return render(request, "User_Auth/login.html")
+
+def forgot_pass_view(request): 
+    return render(request, "User_Auth/forgot_pass.html")
