@@ -28,14 +28,19 @@ Built with Django (backend) and HTML/CSS/JS (frontend), featuring secure authent
    ```bash
    python manage.py makemigrations
    python manage.py migrate
-
-
+   
 5. **Start Server**
     
    ```bash
    python manage.py runserver
    ```
    open http://127.0.0.1:8000/ in your browser.
+
+6. To create a superuser for admin access:
+
+   ```bash
+   python manage.py createsuperuser
+   ```
 
 
 ## How to Push
