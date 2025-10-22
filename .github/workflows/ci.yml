@@ -29,6 +29,11 @@ jobs:
           cd backend
           python manage.py migrate --noinput
 
+      - name: Validate Django setup
+        run: |
+          cd backend
+          python manage.py check
+
       - name: Run tests
         run: |
           cd backend
