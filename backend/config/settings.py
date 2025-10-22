@@ -1,4 +1,5 @@
 from pathlib import Path
+from decouple import config
 
 BASE_DIR = Path(__file__).resolve().parent.parent
 
@@ -7,14 +8,17 @@ DEBUG = True
 ALLOWED_HOSTS = []
 
 INSTALLED_APPS = [
-    "django.contrib.admin",
-    "django.contrib.auth",
-    "django.contrib.contenttypes",
-    "django.contrib.sessions",
-    "django.contrib.messages",
-    "django.contrib.staticfiles",
-    "config",  # your app
+    'django.contrib.admin',
+    'django.contrib.auth',
+    'django.contrib.contenttypes',
+    'django.contrib.sessions',
+    'django.contrib.messages',
+    'django.contrib.staticfiles',
+    'config', 
 ]
+
+AUTH_USER_MODEL = 'config.CustomUser' 
+
 
 MIDDLEWARE = [
     "django.middleware.security.SecurityMiddleware",
@@ -24,6 +28,10 @@ MIDDLEWARE = [
     "django.contrib.auth.middleware.AuthenticationMiddleware",
     "django.contrib.messages.middleware.MessageMiddleware",
     "django.middleware.clickjacking.XFrameOptionsMiddleware",
+    'django.middleware.cache.UpdateCacheMiddleware',
+    'django.middleware.common.CommonMiddleware',
+    'django.middleware.cache.FetchFromCacheMiddleware',
+    'config.middleware.NoCacheMiddleware',
 ]
 
 ROOT_URLCONF = "config.urls"
@@ -32,8 +40,7 @@ TEMPLATES = [
     {
         "BACKEND": "django.template.backends.django.DjangoTemplates",
         "DIRS": [
-            BASE_DIR.parent / "frontend" / "templates",  # index.html
-            BASE_DIR.parent / "frontend" / "Pages",      # home.html, form.html, view_report.html
+            BASE_DIR.parent / "frontend",  
         ],
         "APP_DIRS": True,
         "OPTIONS": {
@@ -47,14 +54,30 @@ TEMPLATES = [
     },
 ]
 
+
+
 WSGI_APPLICATION = "config.wsgi.application"
 
+AUTH_USER_MODEL = 'config.CustomUser'
+
+AUTHENTICATION_BACKENDS = [
+    'django.contrib.auth.backends.ModelBackend',  # default
+]
+
+
+LOGIN_URL = '/login/'
+
 DATABASES = {
-    "default": {
-        "ENGINE": "django.db.backends.sqlite3",
-        "NAME": BASE_DIR / "db.sqlite3",
+    'default': {
+        'ENGINE': 'django.db.backends.postgresql',
+        'NAME': config('DB_NAME'),
+        'USER': config('DB_USER'),
+        'PASSWORD': config('DB_PASSWORD'),
+        'HOST': config('DB_HOST'),
+        'PORT': config('DB_PORT'),
     }
 }
+
 
 LANGUAGE_CODE = "en-us"
 TIME_ZONE = "UTC"
