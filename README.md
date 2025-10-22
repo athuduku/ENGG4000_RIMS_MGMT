@@ -21,11 +21,14 @@ Built with Django (backend) and HTML/CSS/JS (frontend), featuring secure authent
    
    ```bash
    pip install django
+   pip install -r requirements.txt
 
 4. **Run Migrations**
    
    ```bash
+   python manage.py makemigrations
    python manage.py migrate
+
 
 5. **Start Server**
     
