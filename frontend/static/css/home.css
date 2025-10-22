@@ -1,0 +1,182 @@
+:root {
+  --unb-red: #C8102E;
+  --white: #ffffff;
+  --gray: #555;
+  --bg-overlay: rgba(255, 255, 255, 0.85);
+}
+
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+  font-family: "Poppins", sans-serif;
+}
+
+body {
+  margin: 0;
+  color: #2c3e50;
+  display: flex;
+  flex-direction: column;
+  min-height: 100vh;
+  background-color: var(--white);
+  background-image: url("../assets/24-6-1024x683.webp");
+  background-size: cover;
+  background-position: center;
+  background-repeat: no-repeat;
+  position: relative;
+}
+
+/* Overlay for brightness */
+body::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background-color: var(--bg-overlay);
+  backdrop-filter: blur(2px);
+  z-index: 0;
+}
+
+body * {
+  position: relative;
+  z-index: 1;
+}
+
+/* ===== Top Bar ===== */
+.topbar {
+  background-color: var(--unb-red);
+  color: white;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 14px 40px;
+  font-size: 20px;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+}
+
+.topbar .logo-area {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.topbar img {
+  height: 70px;
+  width: auto;
+}
+
+.topbar h1 {
+  font-size: 20px;
+  font-weight: 600;
+  letter-spacing: 0.5px;
+}
+
+.topbar nav a {
+  color: white;
+  text-decoration: none;
+  margin-left: 20px;
+  font-weight: 600;
+  font-size: 20px;
+  transition: opacity 0.3s ease;
+}
+
+.topbar nav a:hover {
+  opacity: 0.8;
+}
+
+/* ===== Hero Section ===== */
+.hero {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  text-align: center;
+  padding: 70px 20px;
+  animation: fadeIn 0.8s ease forwards;
+}
+
+.hero h2 {
+  font-size: 40px;
+  color: var(--unb-red);
+  margin-bottom: 12px;
+  font-weight: 700;
+  text-shadow: 0 1px 3px rgba(0, 0, 0, 0.15);
+}
+
+.hero p {
+  font-size: 20px;
+  color: var(--gray);
+  max-width: 600px;
+  line-height: 1.6;
+  margin-bottom: 40px;
+}
+
+/* ===== Buttons ===== */
+.button-group {
+  display: flex;
+  gap: 20px;
+  flex-wrap: wrap;
+  justify-content: center;
+}
+
+.btn-login {
+  background-color: var(--unb-red);
+  color: white;
+  border: none;
+  padding: 12px 32px;
+  border-radius: 6px;
+  font-size: 20px;
+  font-weight: 600;
+  text-decoration: none;
+  transition: all 0.3s ease;
+}
+
+.btn-login:hover {
+  background-color: #8B0000;
+  box-shadow: 0 6px 15px rgba(200, 16, 46, 0.25);
+}
+
+.btn-signup {
+  border: 2px solid var(--unb-red);
+  color: var(--unb-red);
+  background: transparent;
+  padding: 11px 30px;
+  border-radius: 6px;
+  font-size: 20px;
+  font-weight: 600;
+  text-decoration: none;
+  transition: all 0.3s ease;
+}
+
+.btn-signup:hover {
+  background-color: var(--unb-red);
+  color: white;
+  box-shadow: 0 6px 15px rgba(200, 16, 46, 0.25);
+}
+
+/* ===== Animation ===== */
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(10px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+/* ===== Responsive ===== */
+@media (max-width: 600px) {
+  .hero h2 {
+    font-size: 28px;
+  }
+
+  .button-group {
+    flex-direction: column;
+    gap: 15px;
+  }
+
+  .topbar {
+    padding: 10px 25px;
+    font-size: 18px;
+  }
+
+  .topbar img {
+    height: 50px;
+  }
+}

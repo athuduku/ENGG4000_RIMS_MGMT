@@ -4,56 +4,48 @@
 <head>
   <meta charset="UTF-8">
   <title>Login</title>
-  <link rel="stylesheet" href="{% static 'css/style.css' %}">
-   <link rel="icon" type="image/png" sizes="32x32" href="{% static 'assets/IBE-logo.png' %}">
+  <link rel="icon" href="{% static 'assets/IBE-logo.png' %}">
+  <link rel="stylesheet" href="{% static 'css/login.css' %}">
 </head>
+
 <body>
   <div class="navbar">
-    <img src="{% static 'assets/IBE-logo.png' %}" alt="IBE Logo" class="logo">    
+    <img src="{% static 'assets/IBE-logo.png' %}" alt="IBE Logo">
     <ul>
-      <li><a href="{% url 'index' %}">Home</a></li>
-      <li><a  href="{% url 'signup' %}">Sign Up</a></li>
+      <li><a href="{% url 'home' %}">Home</a></li>
+      <li><a href="{% url 'signup' %}">Sign Up</a></li>
     </ul>
   </div>
 
-  <div class="form-container">
+  <div class="container">
     <h2>Login to your Account</h2>
-    <form id="loginForm">
-      <label>Email:</label>
-      <input type="email" id="email" required>
+    <p class="subtitle">Enter your credentials below to continue</p>
 
-      <label>Password:</label>
-      <input type="password" id="password" required>
+    <form id="loginForm" method="POST">
+      {% csrf_token %}
+      <label>Email</label>
+      <input type="email" id="email" name="email" placeholder="Enter your email" required>
 
-      <p style="text-align:center;">Forgot your password? 
-      <a href="{% url 'forgot_pass' %}" style="color:#1abc9c;">Reset</a>
-      </p>
+      <label>Password</label>
+      <input type="password" id="password" name="password" placeholder="Enter your password" required>
 
-      <button type="submit" class="button">Login</button>
+      <!-- ✅ Pass dashboard URL to JS -->
+      <button 
+        type="submit" 
+        class="button"
+        data-dashboard-url="{% url 'dashboard' %}">
+        Login
+      </button>
     </form>
 
-    
+    <div class="divider"></div>
+
+    <p class="bottom-text">
+      Forgot your password? <a href="{% url 'forgot_pass' %}">Reset</a> <br><br>
+      Don’t have an account? <a href="{% url 'signup' %}">Sign Up</a>
+    </p>
   </div>
 
-  <script>
-    document.getElementById("loginForm").addEventListener("submit", function(event) {
-      event.preventDefault();
-
-      const email = document.getElementById("email").value;
-      const password = document.getElementById("password").value;
-
-      let users = JSON.parse(localStorage.getItem("users")) || [];
-
-      const user = users.find(u => u.email === email && u.password === password);
-
-      if (user) {
-        localStorage.setItem("loggedInUser", JSON.stringify(user));
-        alert("Login successful!");
-        window.location.href = "{% url 'index' %}";
-      } else {
-        alert("Invalid credentials!");
-      }
-    });
-  </script>
+  <script src="{% static 'js/login.js' %}"></script>
 </body>
 </html>
