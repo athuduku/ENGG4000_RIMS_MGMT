@@ -23,24 +23,37 @@ Built with Django (backend) and HTML/CSS/JS (frontend), featuring secure authent
    pip install django
    pip install -r requirements.txt
 
-4. **Run Migrations**
+4. **Setup Database**
+
+   Create a file named .env under the backend folder and fill out based on your PostgreSQL database info:
+
+   ```bash
+   DB_NAME=(DB_NAME)
+   DB_USER=postgres
+   DB_PASSWORD=(DB_PASSWORD)
+   DB_HOST=localhost
+   DB_PORT=5432
+
+6. **Run Migrations**
    
    ```bash
    python manage.py makemigrations
    python manage.py migrate
    
-5. **Start Server**
+7. **Start Server**
     
    ```bash
    python manage.py runserver
    ```
-   open http://127.0.0.1:8000/ in your browser.
+   Then open your browser and visit:
+   http://127.0.0.1:8000/
 
-6. To create a superuser for admin access:
+9. To create a superuser for admin access:
 
    ```bash
    python manage.py createsuperuser
    ```
+   Then log in at http://127.0.0.1:8000/admin/
 
 
 ## How to Push
