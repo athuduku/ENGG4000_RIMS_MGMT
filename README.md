@@ -15,7 +15,7 @@ Built with Django (backend) and HTML/CSS/JS (frontend), featuring secure authent
    
    ```bash
    python -m venv venv
-   source venv/Scripts/activate      # Git Bash
+   source venv/Scripts/activate  
   
 3. **Install Dependencies**
    
