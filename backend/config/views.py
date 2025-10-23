@@ -5,6 +5,7 @@ from django.contrib import messages
 from django.contrib.auth.decorators import login_required
 from django.views.decorators.csrf import csrf_exempt
 from django.views.decorators.cache import never_cache
+from django.contrib.auth.forms import PasswordResetForm
 
 User = get_user_model()
 
@@ -75,3 +76,25 @@ def logout_view(request):
 @login_required(login_url="login")
 def dashboard_view(request):
     return render(request, "Pages/dashboard.html", {"user": request.user})
+
+@csrf_exempt
+def forgot_password_view(request):
+    if request.method == "POST":
+        email = request.POST.get("email").strip()
+        form = PasswordResetForm({"email": email})
+
+        if form.is_valid():
+            # ✅ Sends reset email securely with a token
+            form.save(
+                request=request,
+                use_https=True,
+                from_email="no-reply@yourdomain.com",
+                email_template_name="emails/password_reset_email.html"
+            )
+        
+        # Always return the same message (to prevent email enumeration)
+        return JsonResponse({
+            "success": "If an account with that email exists, a password reset link has been sent."
+        })
+    
+    return render(request, "Pages/User_Auth/forgot_pass.html")
