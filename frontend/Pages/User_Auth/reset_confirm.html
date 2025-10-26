@@ -1,0 +1,162 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Set a New Password</title>
+  <link rel="icon" href="{% static 'assets/IBE-logo.png' %}">
+  <link rel="stylesheet" href="{% static 'css/signup.css' %}">
+
+  <style>
+    body {
+      display: flex;
+      height: 100vh;
+      background: #fff;
+      font-family: "Poppins", sans-serif;
+      margin: 0;
+    }
+
+    .left-panel {
+      flex: 1;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      background: #fff;
+    }
+
+    .form-container {
+      width: 550px;
+    }
+
+    .form-container h2 {
+      color: #C8102E;
+      font-size: 35px;
+      font-weight: 700;
+      text-align: center;
+      margin-bottom: 10px;
+    }
+
+    .form-note {
+      text-align: center;
+      color: #555;
+      font-size: 18px;
+      margin-bottom: 25px;
+    }
+
+    label {
+      display: block;
+      text-align: left;
+      color: #333;
+      font-weight: 600;
+      margin-top: 10px;
+      margin-bottom: 6px;
+      font-size: 18px;
+    }
+
+    input {
+      width: 100%;
+      padding: 10px;
+      margin-top: 5px;
+      border-radius: 6px;
+      border: 1px solid #ccc;
+      font-size: 18px;
+    }
+
+    .button {
+      width: 100%;
+      background: #C8102E;
+      color: white;
+      border: none;
+      padding: 12px;
+      border-radius: 6px;
+      font-size: 17px;
+      font-weight: 500;
+      cursor: pointer;
+      margin-top: 25px;
+      transition: background 0.3s ease;
+    }
+
+    .button:hover {
+      background: #a10c25;
+    }
+
+    .right-panel {
+      flex: 1.2;
+      background: linear-gradient(rgba(200, 16, 46, 0.9), rgba(200, 16, 46, 0.9)),
+        url("{% static 'assets/pexels-magda-ehlers-pexels-12715977.jpg' %}") center/cover no-repeat;
+      color: #fff;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      text-align: center;
+      padding: 50px;
+    }
+
+    .right-panel h1 {
+      font-size: 34px;
+      margin-bottom: 15px;
+    }
+
+    .right-panel p {
+      font-size: 18px;
+      max-width: 400px;
+      color: #f8f8f8;
+      line-height: 1.6;
+    }
+
+    @media (max-width: 900px) {
+      body {
+        flex-direction: column;
+      }
+
+      .right-panel {
+        display: none;
+      }
+
+      .left-panel {
+        width: 100%;
+        flex: none;
+      }
+
+      .form-container {
+        width: 90%;
+        max-width: 400px;
+      }
+    }
+  </style>
+</head>
+
+<body>
+  <div class="right-panel">
+    <h1>Reset Your Password</h1>
+    <p>To protect your account, please set a new password that is strong and unique. Avoid using old or easily guessed passwords.</p>
+  </div>
+
+  <div class="left-panel">
+    <div class="form-container">
+      <h2>Set a New Password</h2>
+      <p class="form-note">Please enter and confirm your new password below to complete the reset process.</p>
+
+      {% if validlink %}
+        <form method="POST">
+          {% csrf_token %}
+          <label for="id_new_password1">New password</label>
+          {{ form.new_password1 }}
+
+          <label for="id_new_password2" style="margin-top:12px;">Confirm new password</label>
+          {{ form.new_password2 }}
+
+          <button type="submit" class="button">Change Password</button>
+        </form>
+      {% else %}
+        <p style="color:red; text-align:center;">The password reset link is invalid or expired.</p>
+        <div style="text-align:center; margin-top:15px;">
+          <a href="{% url 'forgot_pass' %}" style="color:#C8102E; font-weight:500;">Request a new reset link</a>
+        </div>
+      {% endif %}
+    </div>
+  </div>
+
+</body>
+</html>

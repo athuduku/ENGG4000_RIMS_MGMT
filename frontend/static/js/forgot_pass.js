@@ -1,29 +1,27 @@
-document.getElementById("resetForm").addEventListener("submit", function(event) {
+document.getElementById("resetForm").addEventListener("submit", async function (event) {
   event.preventDefault();
-
   const email = document.getElementById("email").value.trim();
-  const newPassword = document.getElementById("newPassword").value;
-  const confirmPassword = document.getElementById("confirmPassword").value;
-  const loginUrl = document.querySelector(".button").dataset.loginUrl;
 
-  if (newPassword !== confirmPassword) {
-    alert("Passwords do not match!");
-    return;
+  try {
+    const response = await fetch("/forgot_pass/", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/x-www-form-urlencoded",
+        "X-CSRFToken": document.querySelector("[name=csrfmiddlewaretoken]").value,
+      },
+      body: new URLSearchParams({ email }),
+    });
+
+    const data = await response.json();
+
+    if (response.ok) {
+      alert(data.success || "If that email exists, a reset link was sent!");
+      window.location.href = document.querySelector(".button").dataset.loginUrl;
+    } else {
+      alert(data.error || "Failed to send reset link. Try again later.");
+    }
+  } catch (err) {
+    console.error("Error:", err);
+    alert("Something went wrong. Please try again.");
   }
-
-  // Simulate password update in localStorage
-  let users = JSON.parse(localStorage.getItem("users")) || [];
-  let user = users.find(u => u.email === email);
-
-  if (!user) {
-    alert("No user found with this email!");
-    return;
-  }
-
-  // Update the user password
-  user.password = newPassword;
-  localStorage.setItem("users", JSON.stringify(users));
-
-  alert("Password updated successfully! Please log in again.");
-  window.location.href = loginUrl; 
 });

@@ -1,0 +1,77 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Password Changed Successfully</title>
+  <link rel="icon" href="{% static 'assets/IBE-logo.png' %}">
+  <style>
+    body {
+        font-family: "Poppins", sans-serif;
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+        align-items: center;
+        height: 100vh;
+        text-align: center;
+        margin: 0;
+        color: #2c3e50;
+    
+        background: 
+            linear-gradient(rgba(255, 255, 255, 0.92), rgba(255, 255, 255, 0.92)),
+            url("{% static 'assets/istockphoto-2186522705-612x612.webp' %}") center/cover no-repeat;
+        
+        background-size: cover;
+        background-position: center;
+        background-repeat: no-repeat;
+    }
+
+    div {
+        background: rgba(255,255,255,0.85);
+        padding: 30px 50px;
+        border-radius: 12px;
+        box-shadow: 0 4px 15px rgba(0,0,0,0.05);
+        animation: fadeIn 0.8s ease-in;
+    }
+
+    @keyframes fadeIn {
+        from { opacity: 0; transform: translateY(10px); }
+        to { opacity: 1; transform: translateY(0); }
+    }
+
+    h2 {
+      color: #C8102E;
+      font-size: 32px;
+      margin-bottom: 15px;
+    }
+
+    p {
+      color: #555;
+      font-size: 20px;
+      margin-bottom: 25px;
+      max-width: 450px;
+      line-height: 1.6;
+    }
+
+    a {
+      background: #C8102E;
+      color: #fff;
+      padding: 12px 28px;
+      border-radius: 6px;
+      text-decoration: none;
+      font-size: 20px;
+      font-weight: 500;
+      transition: background 0.3s ease;
+    }
+
+    a:hover {
+      background-color: #8B0000;
+    }
+  </style>
+</head>
+<body>
+  <h2>Password Changed Successfully</h2>
+  <p>Your password has been updated. You can now log in using your new credentials.</p>
+  <a href="{% url 'login' %}">Go to Login</a>
+</body>
+</html>

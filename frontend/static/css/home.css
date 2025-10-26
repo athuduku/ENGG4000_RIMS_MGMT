@@ -26,7 +26,6 @@ body {
   position: relative;
 }
 
-/* Overlay for brightness */
 body::before {
   content: "";
   position: absolute;
@@ -41,7 +40,6 @@ body * {
   z-index: 1;
 }
 
-/* ===== Top Bar ===== */
 .topbar {
   background-color: var(--unb-red);
   color: white;
@@ -50,7 +48,7 @@ body * {
   align-items: center;
   padding: 14px 40px;
   font-size: 20px;
-  box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.25);
 }
 
 .topbar .logo-area {
@@ -83,7 +81,6 @@ body * {
   opacity: 0.8;
 }
 
-/* ===== Hero Section ===== */
 .hero {
   flex: 1;
   display: flex;
@@ -111,7 +108,6 @@ body * {
   margin-bottom: 40px;
 }
 
-/* ===== Buttons ===== */
 .button-group {
   display: flex;
   gap: 20px;
@@ -154,13 +150,11 @@ body * {
   box-shadow: 0 6px 15px rgba(200, 16, 46, 0.25);
 }
 
-/* ===== Animation ===== */
 @keyframes fadeIn {
   from { opacity: 0; transform: translateY(10px); }
   to { opacity: 1; transform: translateY(0); }
 }
 
-/* ===== Responsive ===== */
 @media (max-width: 600px) {
   .hero h2 {
     font-size: 28px;
