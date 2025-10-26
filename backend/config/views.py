@@ -27,21 +27,24 @@ def signup_view(request):
         name = request.POST.get("name")
         email = request.POST.get("email")
         password = request.POST.get("password")
+        consent = request.POST.get("consent") == "true"
 
         if User.objects.filter(email=email).exists():
             return JsonResponse({"error": "Email already registered"}, status=400)
 
         user = User.objects.create_user(
-            username=name,          # still needed for AbstractUser
+            username=name,
             email=email,
             password=password,
-            user_type="student"
+            user_type="student",
+            consent_to_share=consent  
         )
         user.save()
 
         return JsonResponse({"success": "Account created successfully!"})
 
     return render(request, "Pages/User_Auth/signup.html")
+
 
 
 @csrf_exempt
@@ -84,7 +87,6 @@ def forgot_password_view(request):
         form = PasswordResetForm({"email": email})
 
         if form.is_valid():
-            # ✅ Sends reset email securely with a token
             form.save(
                 request=request,
                 use_https=True,
