@@ -16,7 +16,7 @@ body {
   overflow: hidden;
 }
 
-/* Left form */
+
 .left-panel {
   flex: 1;
   background-color: #ffffff;
@@ -24,6 +24,20 @@ body {
   justify-content: center;
   align-items: center;
 }
+
+.logo-top {
+  position: absolute;
+  top: 20px;
+  left: 30px;
+  z-index: 10;
+}
+
+.logo-top img {
+  height: 60px;
+  width: auto;
+  filter: brightness(0) saturate(100%) invert(19%) sepia(94%) saturate(4936%) hue-rotate(339deg) brightness(92%) contrast(101%);
+}
+
 
 .form-container {
   background: #fff;

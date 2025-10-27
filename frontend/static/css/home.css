@@ -57,8 +57,10 @@ body * {
   gap: 12px;
 }
 
+
+
 .topbar img {
-  height: 70px;
+  height: 60px;
   width: auto;
 }
 
