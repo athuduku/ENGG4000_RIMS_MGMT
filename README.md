@@ -125,7 +125,7 @@ Before making any changes, create a feature branch:
 
 Once approved and confirmed working, merge the pull request into `main`.
 
-Recommended Branch Workflow:
+## Recommended Branch Workflow:
 | Branch | Purpose |
 |---|---|
 | `main` | Production code |
