@@ -73,4 +73,62 @@ Built with Django (backend) and HTML/CSS/JS (frontend), featuring secure authent
    ```bash
    git push origin main
 
-;)
+## How to Create a Pull Request (PR)
+
+1. **Create a New Branch**
+Before making any changes, create a feature branch:
+   ```bash
+   git checkout -b feature/feature-name
+   ```
+
+2. **Make Your Changes**
+
+   Update code, test features locally, and verify everything still works.
+
+3. **Stage and Commit**
+   ```bash
+   git add .
+   git commit -m "Describe the feature"
+   ```
+4. **Push Your Branch**
+   ```bash
+   git push origin feature/your-feature-name
+   ```
+
+5. **Open a Pull Request on GitHub**
+
+   1. Go to your repository on GitHub
+   
+   2. You will see a “Compare & pull request” button
+   
+   3. Set:
+      - Base branch: `main`
+      - Compare branch: your feature branch
+      - Add a clear title and description
+
+   4. Submit the PR
+
+## How to Review a Pull Request
+
+1. Go to the Pull Requests tab on GitHub
+
+2. Select the PR you want to review
+
+3. Review changed files using the Files changed tab
+
+4. Add comments, requests for changes, or approval
+
+5. If changes are needed:
+   - Updates the branch
+   - Pushes again
+   - PR updates automatically
+
+Once approved and confirmed working, merge the pull request into `main`.
+
+Recommended Branch Workflow:
+| Branch | Purpose |
+|---|---|
+| `main` | Production code |
+| `feature/*` | New features |
+| `fix/*` | Bug fixes |
+| `test/*` | Experimental or testing updates |
