@@ -1,0 +1,173 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>NSERC-Style Researcher Evaluation Report</title>
+
+<style>
+    body {
+        font-family: Arial, Helvetica, sans-serif;
+        margin: 40px;
+        background: #f9fafb;
+    }
+    h1 {
+        text-align: center;
+    }
+    .login-box {
+        max-width: 400px;
+        margin: 0 auto 30px auto;
+        padding: 20px;
+        background: #eef2f7;
+        border-radius: 6px;
+    }
+    label {
+        display: block;
+        margin-top: 10px;
+    }
+    input {
+        width: 100%;
+        padding: 8px;
+        margin-top: 5px;
+    }
+    button {
+        margin-top: 15px;
+        padding: 10px;
+        width: 100%;
+        background: #2c3e50;
+        color: white;
+        border: none;
+        cursor: pointer;
+    }
+    button:hover {
+        background: #1a252f;
+    }
+    table {
+        border-collapse: collapse;
+        width: 100%;
+        margin-top: 30px;
+        background: white;
+    }
+    th, td {
+        border: 1px solid #ddd;
+        padding: 10px;
+        text-align: center;
+    }
+    th {
+        background-color: #2c3e50;
+        color: white;
+    }
+    tr:nth-child(even) {
+        background-color: #f2f2f2;
+    }
+    .badge {
+        padding: 4px 8px;
+        border-radius: 4px;
+        color: white;
+        font-size: 0.9em;
+    }
+    .yes { background-color: #27ae60; }
+    .no { background-color: #c0392b; }
+</style>
+</head>
+
+<body>
+
+<h1>NSERC-Style Researcher Evaluation Report</h1>
+
+<!-- LOGIN FORM -->
+<div class="login-box">
+    <form id="loginForm">
+        <!-- Django-style CSRF token -->
+        <input type="hidden" name="csrfmiddlewaretoken" value="{{ csrf_token }}">
+
+        <label for="email">Email</label>
+        <input type="email" id="email" required>
+
+        <label for="password">Password</label>
+        <input type="password" id="password" required>
+
+        <button type="submit">Login</button>
+    </form>
+</div>
+
+<!-- REPORT TABLE -->
+<table>
+    <thead>
+        <tr>
+            <th>Name</th>
+            <th>Years Active</th>
+            <th>Journal Papers</th>
+            <th>Conference Papers</th>
+            <th>Total Funding</th>
+            <th># Grants</th>
+            <th>HQP</th>
+            <th>Service</th>
+            <th>PI</th>
+            <th>Score</th>
+        </tr>
+    </thead>
+    <tbody>
+        <tr>
+            <td>Researcher A</td>
+            <td>12</td>
+            <td>18</td>
+            <td>10</td>
+            <td>$850,000</td>
+            <td>6</td>
+            <td>14</td>
+            <td>5</td>
+            <td><span class="badge yes">YES</span></td>
+            <td><strong>278.0</strong></td>
+        </tr>
+        <tr>
+            <td>Researcher B</td>
+            <td>5</td>
+            <td>6</td>
+            <td>8</td>
+            <td>$120,000</td>
+            <td>2</td>
+            <td>3</td>
+            <td>1</td>
+            <td><span class="badge no">NO</span></td>
+            <td><strong>103.8</strong></td>
+        </tr>
+    </tbody>
+</table>
+
+<!-- ======================================================
+     JAVASCRIPT: ASYNC LOGIN HANDLER
+     ====================================================== -->
+<script>
+document.getElementById("loginForm").addEventListener("submit", async function(event) {
+    event.preventDefault();
+
+    const email = document.getElementById("email").value.trim();
+    const password = document.getElementById("password").value.trim();
+    const csrfToken = document.querySelector('[name=csrfmiddlewaretoken]').value;
+
+    try {
+        const response = await fetch("/login/", {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/x-www-form-urlencoded",
+                "X-CSRFToken": csrfToken
+            },
+            body: new URLSearchParams({ email, password })
+        });
+
+        const data = await response.json();
+
+        if (data.redirect) {
+            window.location.href = data.redirect;
+        } else {
+            alert(data.error || "Invalid credentials.");
+        }
+    } catch (err) {
+        console.error("Login error:", err);
+        alert("Login failed. Please try again later.");
+    }
+});
+</script>
+
+</body>
+</html>
