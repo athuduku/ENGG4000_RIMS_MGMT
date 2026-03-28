@@ -1,4 +1,5 @@
 {% load static %}
+{% load humanize %}
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -7,283 +8,539 @@
   <link rel="icon" href="{% static 'assets/IBE-logo.png' %}">
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css">
   <link rel="stylesheet" href="{% static 'css/dashboard.css' %}">
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/echarts/5.4.3/echarts.min.js"></script>
   <style>
-    .report-header {
-      margin-bottom: 30px;
-      padding-bottom: 20px;
-      border-bottom: 2px solid #C8102E;
+    :root {
+      --red: #C8102E; --red-dark: #9e0c24; --red-pale: #fff5f6;
+      --ink: #1a1a2e; --muted: #6b7280; --light: #9ca3af;
+      --border: #e5e7eb; --surface: #f9fafb; --white: #ffffff;
     }
 
-    .report-header h1 {
-      font-size: 36px;
-      color: #C8102E;
-      margin: 0 0 10px 0;
-      font-weight: 700;
-    }
+    .report-shell { font-family: 'DM Sans', sans-serif; max-width: 1500px; margin: 0 auto; }
 
-    .report-header p {
-      font-size: 20px;
-      color: #666;
-      margin: 0;
+    /* ── Header ─────────────────────────── */
+    .report-top {
+      display: flex; justify-content: space-between; align-items: center;
+      padding-bottom: 20px; margin-bottom: 24px;
+      border-bottom: 1px solid var(--border); flex-wrap: wrap; gap: 12px;
     }
-
-    .export-btn {
-      background: #C8102E;
-      color: white;
-      padding: 12px 24px;
-      border: none;
-      border-radius: 6px;
-      cursor: pointer;
-      font-weight: 600;
-      margin-top: 20px;
-      font-size: 16px;
+    .report-top h1 {
+      font-size: 24px; font-weight: 700; color: var(--ink); margin: 0;
+      display: flex; align-items: center; gap: 10px;
     }
-
-    .export-btn:hover {
-      background: #a00d26;
+    .report-top h1 i { color: var(--red); font-size: 22px; }
+    .report-top .subtitle { font-size: 16px; color: var(--muted); margin-top: 4px; }
+    .btn-export {
+      display: inline-flex; align-items: center; gap: 6px;
+      background: var(--white); color: var(--red); border: 1.5px solid var(--red);
+      border-radius: 8px; padding: 8px 16px; font-size: 16px; font-weight: 600;
+      text-decoration: none; cursor: pointer; transition: background 0.2s; font-family: inherit;
     }
+    .btn-export:hover { background: var(--red-pale); }
 
-    .stat-box {
-      background: white;
-      padding: 30px;
-      border-radius: 8px;
-      box-shadow: 0 2px 8px rgba(0,0,0,0.1);
-      margin-bottom: 20px;
-      border-left: 4px solid #C8102E;
+    /* ── KPI row ────────────────────────── */
+    .kpi-row {
+      display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+      gap: 12px; margin-bottom: 28px;
     }
-
-    .stat-box h3 {
-      color: #C8102E;
-      margin-top: 0;
-      font-size: 24px;
+    .kpi {
+      background: var(--white); border: 1px solid var(--border); border-radius: 10px;
+      padding: 16px 18px; text-align: center;
     }
+    .kpi-val { font-size: 24px; font-weight: 700; color: var(--red); line-height: 1.1; }
+    .kpi-lbl { font-size: 16px; font-weight: 600; color: var(--muted); text-transform: uppercase; letter-spacing: 0.5px; margin-top: 6px; }
+    .kpi.blue .kpi-val { color: #1d4ed8; }
+    .kpi.green .kpi-val { color: #059669; }
 
-    .stat-box p {
-      font-size: 24px;
-      font-weight: 600;
-      color: #333;
-      margin: 15px 0;
+    /* ── Collapsible sections ──────────── */
+    .report-section {
+      margin-bottom: 20px; background: var(--white);
+      border: 1px solid var(--border); border-radius: 12px; overflow: hidden;
     }
-
-    .stat-box small {
-      color: #999;
-      font-size: 16px;
+    .section-header {
+      display: flex; justify-content: space-between; align-items: center;
+      padding: 16px 20px; cursor: pointer; user-select: none; transition: background 0.15s;
     }
+    .section-header:hover { background: var(--surface); }
+    .section-header h2 {
+      font-size: 15px; font-weight: 700; color: var(--red); margin: 0;
+      text-transform: uppercase; letter-spacing: 0.5px;
+      display: flex; align-items: center; gap: 8px;
+    }
+    .section-header h2 i { font-size: 16px; }
+    .section-chevron { font-size: 14px; color: var(--light); transition: transform 0.2s; }
+    .report-section.collapsed .section-body { display: none; }
+    .report-section.collapsed .section-chevron { transform: rotate(-90deg); }
+    .section-body { padding: 0 20px 20px; }
+    .section-desc { font-size: 16px; color: var(--muted); margin: 0 0 16px; line-height: 1.5; }
 
+    /* ── Charts ─────────────────────────── */
+    .chart-box { height: 340px; margin-bottom: 4px; }
+    .chart-box-sm { height: 300px; }
+
+    /* ── Tables ─────────────────────────── */
+    .tbl { width: 100%; border-collapse: collapse; }
+    .tbl thead { background: var(--surface); }
+    .tbl th {
+      padding: 10px 14px; text-align: left; font-size: 16px; font-weight: 700;
+      color: var(--muted); text-transform: uppercase; letter-spacing: 0.4px;
+      border-bottom: 1px solid var(--border);
+    }
+    .tbl td {
+      padding: 10px 14px; font-size: 16px; color: var(--ink);
+      border-bottom: 1px solid #f3f4f6;
+    }
+    .tbl tbody tr:last-child td { border-bottom: none; }
+    .tbl tbody tr:hover td { background: #fefefe; }
+    .amt { color: var(--red); font-weight: 700; }
+
+    .scroll-table { max-height: 400px; overflow-y: auto; scrollbar-width: thin; }
+    .scroll-table::-webkit-scrollbar { width: 6px; }
+    .scroll-table::-webkit-scrollbar-thumb { background: #ddd; border-radius: 3px; }
+
+    /* ── Tabs ───────────────────────────── */
+    .tab-row { display: flex; gap: 2px; margin-bottom: 16px; }
+    .tab-btn {
+      padding: 8px 18px; border: 1px solid var(--border); background: var(--surface);
+      font-size: 16px; font-weight: 600; color: var(--muted); cursor: pointer;
+      border-radius: 8px; font-family: inherit; transition: all 0.15s;
+    }
+    .tab-btn:hover { color: var(--red); border-color: var(--red); }
+    .tab-btn.active { background: var(--red); color: #fff; border-color: var(--red); }
+    .tab-panel { display: none; }
+    .tab-panel.active { display: block; }
+
+    /* ── Filter row ────────────────────── */
+    .filter-inline {
+      display: flex; gap: 10px; flex-wrap: wrap; align-items: flex-end; margin-bottom: 16px;
+    }
+    .filter-inline input, .filter-inline select {
+      border: 1px solid var(--border); border-radius: 8px; padding: 7px 12px;
+      font-size: 16px; color: var(--ink); background: var(--white); outline: none;
+      font-family: inherit; min-width: 120px;
+    }
+    .filter-inline input:focus, .filter-inline select:focus { border-color: var(--red); }
+    .filter-inline label {
+      font-size: 16px; font-weight: 700; color: var(--muted); text-transform: uppercase;
+      letter-spacing: 0.3px; display: block; margin-bottom: 4px;
+    }
+    .btn-sm {
+      padding: 7px 14px; border-radius: 8px; font-size: 16px; font-weight: 600;
+      cursor: pointer; font-family: inherit; border: none; transition: background 0.2s;
+    }
+    .btn-red { background: var(--red); color: #fff; }
+    .btn-red:hover { background: var(--red-dark); }
+    .btn-ghost { background: none; color: var(--muted); border: 1px solid var(--border); }
+    .btn-ghost:hover { border-color: var(--red); color: var(--red); }
+
+    /* ── Depletion table ──────────────── */
+    .depl-cell { display: flex; flex-direction: column; gap: 2px; min-width: 120px; }
+    .depl-amt { font-size: 16px; font-weight: 700; color: var(--red); }
+    .depl-grants { font-size: 16px; color: var(--light); }
+    .depl-bar-bg { height: 4px; background: #f0f0f0; border-radius: 2px; overflow: hidden; margin-top: 3px; }
+    .depl-bar { height: 100%; background: linear-gradient(90deg, var(--red), #e85b7a); border-radius: 2px; min-width: 2px; }
+    .now-badge {
+      font-size: 10px; font-weight: 700; background: var(--red); color: #fff;
+      padding: 1px 5px; border-radius: 3px; margin-left: 4px; vertical-align: middle;
+    }
+    .tbl tbody tr.current-row td { background: var(--red-pale); }
+
+    /* ── Org cards ──────────────────────── */
     .org-grid {
       display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
-      gap: 20px;
-      margin-bottom: 30px;
+      grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+      gap: 16px;
     }
-
     .org-card {
-      background: white;
-      padding: 25px;
-      border-radius: 8px;
-      box-shadow: 0 2px 8px rgba(0,0,0,0.1);
-      border-top: 3px solid #C8102E;
+      border: 1px solid var(--border); border-radius: 10px; padding: 16px;
+      border-left: 3px solid var(--red);
     }
+    .org-card h4 { font-size: 16px; font-weight: 700; color: var(--ink); margin: 0 0 8px; line-height: 1.4; }
+    .org-card .org-amt { font-size: 20px; font-weight: 700; color: var(--red); margin: 0 0 4px; }
+    .org-card .org-cnt { font-size: 16px; color: var(--muted); margin: 0; }
 
-    .org-card h4 {
-      color: #C8102E;
-      margin-top: 0;
-      font-size: 20px;
-      word-break: break-word;
+    /* ── Pagination ─────────────────────── */
+    .pager {
+      display: flex; justify-content: center; align-items: center;
+      gap: 12px; margin: 16px 0 4px;
     }
-
-    .org-card p {
-      margin: 12px 0;
-      color: #555;
-      font-size: 18px;
+    .pager button {
+      background: var(--red); color: #fff; padding: 7px 16px; border: none;
+      border-radius: 8px; font-size: 12px; font-weight: 600; cursor: pointer;
+      font-family: inherit; transition: background 0.2s;
     }
+    .pager button:hover:not(:disabled) { background: var(--red-dark); }
+    .pager button:disabled { background: #ddd; cursor: not-allowed; }
+    .pager span { font-size: 12px; color: var(--muted); }
 
-    .org-card .amount {
-      font-size: 22px;
-      font-weight: 700;
-      color: #C8102E;
-    }
+    /* ── Error ──────────────────────────── */
+    .error-box { background: #fef2f2; color: #991b1b; padding: 14px 18px; border-radius: 10px; font-size: 14px; margin-bottom: 20px; }
 
-    table {
-      width: 100%;
-      border-collapse: collapse;
-      background: white;
-      margin-top: 20px;
-      box-shadow: 0 2px 8px rgba(0,0,0,0.1);
-    }
+    /* ── Status badges ─────────────────── */
+    .status-active { background: rgba(5,150,105,0.1); color: #059669; padding: 3px 8px; border-radius: 6px; font-size: 11px; font-weight: 700; }
+    .status-completed { background: rgba(107,114,128,0.1); color: #6b7280; padding: 3px 8px; border-radius: 6px; font-size: 11px; font-weight: 700; }
+    .status-upcoming { background: rgba(217,119,6,0.1); color: #d97706; padding: 3px 8px; border-radius: 6px; font-size: 11px; font-weight: 700; }
 
-    table thead {
-      background: #C8102E;
-      color: white;
-    }
+    @media (max-width: 768px) {
+      .report-shell { padding: 0 12px; }
 
-    table th, table td {
-      padding: 16px;
-      text-align: left;
-      border-bottom: 1px solid #eee;
-      font-size: 20px;
-    }
+      .kpi-row { 
+        grid-template-columns: repeat(2, 1fr); 
+      }
 
-    table tbody tr:hover {
-      background: #f9f9f9;
-    }
-
-    .section-title {
-      font-size: 28px;
-      color: #2C3E50;
-      font-weight: 700;
-      margin-bottom: 20px;
-      margin-top: 40px;
-      border-left: 5px solid #C8102E;
-      padding-left: 12px;
-    }
-
-    .error {
-      background: #f8d7da;
-      color: #721c24;
-      padding: 15px;
-      border-radius: 6px;
-      margin-bottom: 20px;
-      font-size: 16px;
+      .org-grid { 
+        grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+      }
     }
   </style>
 </head>
-
 <body>
-  <div class="dashboard-layout">
+<div class="dashboard-layout">
+  {% include "../sidebar.html" %}
+  <div class="dashboard-main">
+    <div class="report-shell">
 
-    <div class="sidebar" id="sidebar">
-      <button class="sidebar-toggle" id="sidebarToggle">
-        <i class="bi bi-list"></i>
-      </button>
-      
-      <div class="logo-area">
-        <img src="{% static 'assets/IBE-logo.png' %}" alt="Logo">
-      </div>
-
-      <ul>
-        <li><a href="{% url 'dashboard' %}"><i class="bi bi-speedometer2"></i> <span>Dashboard</span></a></li>
-        <li><a href="{% url 'reports_list' %}"><i class="bi bi-bar-chart"></i> <span>Reports</span></a></li>
-        <li><a href="{% url 'add_publication' %}"><i class="bi bi-file-earmark-plus"></i> <span>Add Publication</span></a></li>
-        <li><a href="{% url 'form' %}"><i class="bi bi-file-earmark-plus"></i> <span>Scan Publication</span></a></li>
-        <li><a href="{% url 'view_reports' %}"><i class="bi bi-folder2-open"></i> <span>View Papers</span></a></li>
-        <li><a href="{% url 'home' %}"><i class="bi bi-house-door"></i> <span>Home</span></a></li>
-        <li><a href="{% url 'logout' %}"><i class="bi bi-box-arrow-right"></i> <span>Logout</span></a></li>
-      </ul>
-    </div>
-
-    <div class="dashboard-main">
-
-      <div class="report-header">
-        <h1>Funding Analysis Report</h1>
-        <p>Analysis of funding sources, trends, and distribution</p>
-        <button class="export-btn" onclick="exportCSV()">
-          <i class="bi bi-download"></i> Export as CSV
+      <!-- Header -->
+      <div class="report-top">
+        <div>
+          <h1><i class="bi bi-cash-stack"></i> Funding Analysis Report</h1>
+          <div class="subtitle">Funding sources, trends, and distribution · {{ min_year }}–{{ max_year }}</div>
+        </div>
+        <button class="btn-export" onclick="exportCSV()">
+          <i class="bi bi-download"></i> Export CSV
         </button>
       </div>
 
       {% if error %}
-      <div class="error">
-        <strong>Error:</strong> {{ error }}
-      </div>
+      <div class="error-box"><strong>Error:</strong> {{ error }}</div>
       {% else %}
 
-      <!-- Overall Statistics -->
-      <div class="stat-box">
-        <h3>Overall Funding Statistics</h3>
-        <p>{{ total_funding }} <small>total</small></p>
-        <p>Total Funding Amount</p>
-        <hr>
-        <p>{{ total_grants }} <small>grants</small></p>
-        <p>Total Number of Grants</p>
-        <hr>
-        <p>{{ average_grant }} <small>average</small></p>
-        <p>Average Grant Size</p>
-      </div>
-
-      <!-- Top Organizations -->
-      <h2 class="section-title">Top Funding Organizations</h2>
-      <div class="org-grid">
-        {% for org, stats in top_orgs %}
-        <div class="org-card">
-          <h4>{{ org }}</h4>
-          <p class="amount">${{ stats.amount|floatformat:0|default:"0" }}</p>
-          <p><strong>Grants:</strong> {{ stats.count }}</p>
-          <p><strong>Average:</strong> ${{ stats.amount|add:0|divisibleby:stats.count|yesno:"Yes,No" }}</p>
+      <!-- KPIs -->
+      <div class="kpi-row">
+        <div class="kpi">
+          <div class="kpi-val">{{ total_funding }}</div>
+          <div class="kpi-lbl">Total Funding</div>
         </div>
-        {% endfor %}
+        <div class="kpi blue">
+          <div class="kpi-val">{{ total_grants }}</div>
+          <div class="kpi-lbl">Total Grants</div>
+        </div>
+        <div class="kpi green">
+          <div class="kpi-val">{{ average_grant }}</div>
+          <div class="kpi-lbl">Avg Grant Size</div>
+        </div>
       </div>
 
-      <!-- Funding Trend Chart -->
-      <h2 class="section-title">Funding Trend Over Years</h2>
-      <canvas id="fundingChart" height="80"></canvas>
+      <!-- ── LAST 3 YEARS ─────────────────── -->
+      <div class="report-section">
+        <div class="section-header" onclick="this.parentElement.classList.toggle('collapsed')">
+          <h2><i class="bi bi-clock-history"></i> Last 3 Years ({{ last3_start }}–{{ current_year }})</h2>
+          <i class="bi bi-chevron-down section-chevron"></i>
+        </div>
+        <div class="section-body">
+          <div class="tab-row">
+            <button class="tab-btn active" onclick="switchTab('org')">By Agency</button>
+            <button class="tab-btn" onclick="switchTab('program')">By Program</button>
+            <button class="tab-btn" onclick="switchTab('pi')">By PI</button>
+          </div>
 
-      <!-- Funding by Year Table -->
-      <h2 class="section-title">Funding by Year</h2>
-      <table>
-        <thead>
-          <tr>
-            <th>Year</th>
-            <th>Total Funding</th>
-            <th>Number of Grants</th>
-          </tr>
-        </thead>
-        <tbody>
-          {% for year, data in by_year.items %}
-          <tr>
-            <td><strong>{{ year }}</strong></td>
-            <td>${{ data.amount|floatformat:0 }}</td>
-            <td>{{ data.count }}</td>
-          </tr>
-          {% endfor %}
-        </tbody>
-      </table>
+          <div id="tab-org" class="tab-panel active">
+            {% if last3_by_org %}
+            <div class="scroll-table">
+              <table class="tbl">
+                <thead><tr><th>Funding Agency</th><th>Amount</th><th>Grants</th><th>PIs</th></tr></thead>
+                <tbody>
+                  {% for row in last3_by_org %}
+                  <tr>
+                    <td><strong>{{ row.org }}</strong></td>
+                    <td class="amt">${{ row.amount|floatformat:0|intcomma }}</td>
+                    <td>{{ row.count }}</td>
+                    <td>{{ row.pis }}</td>
+                  </tr>
+                  {% endfor %}
+                </tbody>
+              </table>
+            </div>
+            {% else %}<p class="section-desc" style="text-align:center;padding:20px;">No funding data for the last 3 years.</p>{% endif %}
+          </div>
 
-      
+          <div id="tab-program" class="tab-panel">
+            {% if last3_by_program %}
+            <div class="scroll-table">
+              <table class="tbl">
+                <thead><tr><th>Program</th><th>Amount</th><th>Grants</th></tr></thead>
+                <tbody>
+                  {% for row in last3_by_program %}
+                  <tr>
+                    <td><strong>{{ row.program }}</strong></td>
+                    <td class="amt">${{ row.amount|floatformat:0|intcomma }}</td>
+                    <td>{{ row.count }}</td>
+                  </tr>
+                  {% endfor %}
+                </tbody>
+              </table>
+            </div>
+            {% else %}<p class="section-desc" style="text-align:center;padding:20px;">No program data available.</p>{% endif %}
+          </div>
+
+          <div id="tab-pi" class="tab-panel">
+            {% if last3_by_pi %}
+            <div class="scroll-table">
+              <table class="tbl">
+                <thead><tr><th>PI</th><th>Amount</th><th>Grants</th><th>Agencies</th></tr></thead>
+                <tbody>
+                  {% for row in last3_by_pi %}
+                  <tr>
+                    <td><strong>{{ row.pi }}</strong></td>
+                    <td class="amt">${{ row.amount|floatformat:0|intcomma }}</td>
+                    <td>{{ row.count }}</td>
+                    <td style="font-size:12px;color:var(--muted);">{{ row.orgs|join:", " }}</td>
+                  </tr>
+                  {% endfor %}
+                </tbody>
+              </table>
+            </div>
+            {% else %}<p class="section-desc" style="text-align:center;padding:20px;">No PI data available.</p>{% endif %}
+          </div>
+        </div>
+      </div>
+
+      <!-- ── DEPLETION TIMELINE ──────────── -->
+      <div class="report-section">
+        <div class="section-header" onclick="this.parentElement.classList.toggle('collapsed')">
+          <h2><i class="bi bi-hourglass-split"></i> Funding Depletion Timeline</h2>
+          <i class="bi bi-chevron-down section-chevron"></i>
+        </div>
+        <div class="section-body">
+          <p class="section-desc">Each row shows how much secured funding remains as grants expire over the following 3 years.</p>
+          {% if depletion_rows %}
+          <div class="scroll-table">
+            <table class="tbl depletion-table">
+              <thead><tr><th>Snapshot</th><th>Year 0 (Base)</th><th>+1 Year</th><th>+2 Years</th><th>+3 Years</th></tr></thead>
+              <tbody>
+                {% for row in depletion_rows %}
+                <tr class="{% if row.snapshot_year == current_year %}current-row{% endif %}">
+                  <td>
+                    <strong>{{ row.snapshot_year }}</strong>
+                    {% if row.snapshot_year == current_year %}<span class="now-badge">NOW</span>{% endif %}
+                  </td>
+                  {% for y in row.years %}
+                  <td>
+                    <div class="depl-cell">
+                      <span class="depl-amt">${{ y.amount|floatformat:0|intcomma }}</span>
+                      <span class="depl-grants">{{ y.grant_count }} grant{{ y.grant_count|pluralize }}</span>
+                      <div class="depl-bar-bg"><div class="depl-bar" style="width:{{ y.pct }}%;"></div></div>
+                    </div>
+                  </td>
+                  {% endfor %}
+                </tr>
+                {% endfor %}
+              </tbody>
+            </table>
+          </div>
+          {% else %}<p class="section-desc" style="text-align:center;padding:20px;">No depletion data available.</p>{% endif %}
+        </div>
+      </div>
+
+      <!-- ── SECURED FUNDING TIMELINE ────── -->
+      <div class="report-section">
+        <div class="section-header" onclick="this.parentElement.classList.toggle('collapsed')">
+          <h2><i class="bi bi-graph-up"></i> Secured Funding Timeline</h2>
+          <i class="bi bi-chevron-down section-chevron"></i>
+        </div>
+        <div class="section-body">
+          <div class="filter-inline">
+            <div>
+              <label>From Year</label>
+              <input type="number" id="timeline-year-from" value="{{ year_from }}" min="{{ min_year }}" max="{{ max_year }}">
+            </div>
+            <div>
+              <label>To Year</label>
+              <input type="number" id="timeline-year-to" value="{{ year_to }}" min="{{ min_year }}" max="{{ max_year }}">
+            </div>
+            <button onclick="applyTimelineFilter(); applyDepletionFilter()" class="btn-sm btn-red"><i class="bi bi-funnel"></i> Apply</button>
+          </div>
+          <div class="chart-box" id="depletionChart"></div>
+          <div class="scroll-table" style="margin-top:12px;">
+            <table class="tbl">
+              <thead><tr><th>Year</th><th>Secured Funding</th><th>Active Grants</th></tr></thead>
+              <tbody>
+                {% for item in timeline_data %}
+                <tr>
+                  <td><strong>{{ item.year }}</strong></td>
+                  <td class="amt">${{ item.secured_funding|floatformat:0|intcomma }}</td>
+                  <td>{{ item.active_grants }}</td>
+                </tr>
+                {% empty %}<tr><td colspan="3" style="text-align:center;color:var(--muted);">No data</td></tr>
+                {% endfor %}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+      <!-- ── ACTIVE GRANTS TABLE ─────────── -->
+      <div class="report-section">
+        <div class="section-header" onclick="this.parentElement.classList.toggle('collapsed')">
+          <h2><i class="bi bi-file-earmark-text"></i> Active Grants ({{ year_from }}–{{ year_to }})</h2>
+          <i class="bi bi-chevron-down section-chevron"></i>
+        </div>
+        <div class="section-body">
+          <div class="filter-inline">
+            <div>
+              <label>Title</label>
+              <input type="text" id="filter-title" placeholder="Search..." onkeyup="applyTableFilters()">
+            </div>
+            <div>
+              <label>Organization</label>
+              <input type="text" id="filter-org" placeholder="Search..." onkeyup="applyTableFilters()">
+            </div>
+            <div>
+              <label>Status</label>
+              <select id="filter-status" onchange="applyTableFilters()">
+                <option value="">All</option>
+                <option value="Active">Active</option>
+                <option value="Completed">Completed</option>
+                <option value="Upcoming">Upcoming</option>
+              </select>
+            </div>
+            <div>
+              <label>Sort</label>
+              <select id="sort-by" onchange="applyTableFilters()">
+                <option value="">None</option>
+                <option value="title-asc">Title A–Z</option>
+                <option value="title-desc">Title Z–A</option>
+                <option value="amount-desc">Amount ↓</option>
+                <option value="amount-asc">Amount ↑</option>
+                <option value="start-desc">Start ↓</option>
+                <option value="start-asc">Start ↑</option>
+              </select>
+            </div>
+            <button onclick="clearTableFilters()" class="btn-sm btn-ghost">Clear</button>
+          </div>
+          <div class="scroll-table">
+            <table class="tbl">
+              <thead>
+                <tr><th>Title</th><th>Organization</th><th>Amount</th><th>To IBME</th><th>Start</th><th>End</th><th>Status</th></tr>
+              </thead>
+              <tbody id="grants-table-body"></tbody>
+            </table>
+          </div>
+          <div class="pager">
+            <button id="prev-grants-btn" onclick="previousGrantsPage()">← Prev</button>
+            <span id="grants-page-info">Page 1</span>
+            <button id="next-grants-btn" onclick="nextGrantsPage()">Next →</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- ── GRANTS BY PI ────────────────── -->
+      <div class="report-section">
+        <div class="section-header" onclick="this.parentElement.classList.toggle('collapsed')">
+          <h2><i class="bi bi-people"></i> Grants by PI</h2>
+          <i class="bi bi-chevron-down section-chevron"></i>
+        </div>
+        <div class="section-body">
+          <div class="filter-inline">
+            <div>
+              <label>From Year</label>
+              <input type="number" id="pi-year-from" value="{{ year_from }}" min="{{ min_year }}" max="{{ max_year }}">
+            </div>
+            <div>
+              <label>To Year</label>
+              <input type="number" id="pi-year-to" value="{{ year_to }}" min="{{ min_year }}" max="{{ max_year }}">
+            </div>
+            <button onclick="renderPIChart()" class="btn-sm btn-red"><i class="bi bi-funnel"></i> Apply</button>
+          </div>
+          <div class="chart-box chart-box-sm" id="piChart"></div>
+          <div class="scroll-table" style="margin-top:12px;">
+            <table class="tbl">
+              <thead><tr><th>PI</th><th>Total Funding</th><th>Amount to IBME</th></tr></thead>
+              <tbody id="pi-table-body"></tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+      <!-- ── TOP ORGANIZATIONS ───────────── -->
+      <div class="report-section collapsed">
+        <div class="section-header" onclick="this.parentElement.classList.toggle('collapsed')">
+          <h2><i class="bi bi-building"></i> Top Funding Organizations</h2>
+          <i class="bi bi-chevron-down section-chevron"></i>
+        </div>
+        <div class="section-body">
+          <div class="org-grid">
+            {% for org, stats in top_orgs %}
+            <div class="org-card">
+              <h4>{{ org }}</h4>
+              <p class="org-amt">${{ stats.amount|floatformat:0|intcomma }}</p>
+              <p class="org-cnt"><i class="bi bi-file-earmark-text"></i> {{ stats.count }} grant{{ stats.count|pluralize }}</p>
+            </div>
+            {% endfor %}
+          </div>
+        </div>
+      </div>
+
+      <!-- ── GRANTS BY YEAR ──────────────── -->
+      <div class="report-section collapsed">
+        <div class="section-header" onclick="this.parentElement.classList.toggle('collapsed')">
+          <h2><i class="bi bi-bar-chart-line"></i> New Grants Awarded by Year</h2>
+          <i class="bi bi-chevron-down section-chevron"></i>
+        </div>
+        <div class="section-body">
+          <div class="chart-box" id="fundingChart"></div>
+        </div>
+      </div>
 
       {% endif %}
     </div>
   </div>
+</div>
 
-  <script src="{% static 'js/dashboard.js' %}"></script>
-  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-  <script>
-    document.addEventListener('DOMContentLoaded', function() {
-      const years = [{% for year in by_year.keys %}{{ year }},{% endfor %}];
-      const amounts = [{% for year, data in by_year.items %}{{ data.amount }},{% endfor %}];
-      
-      const ctx = document.getElementById('fundingChart').getContext('2d');
-      new Chart(ctx, {
-        type: 'line',
-        data: {
-          labels: years,
-          datasets: [{
-            label: 'Funding Amount ($)',
-            data: amounts,
-            backgroundColor: 'rgba(200, 16, 46, 0.1)',
-            borderColor: '#C8102E',
-            borderWidth: 2,
-            tension: 0.4,
-            fill: true
-          }]
-        },
-        options: {
-          responsive: true,
-          maintainAspectRatio: true,
-          plugins: {
-            legend: { display: true }
-          },
-          scales: {
-            y: { beginAtZero: true }
-          }
-        }
-      });
-    });
-  </script>
-  <script>
-    function exportCSV() {
-      window.location.href = '/reports/export/funding_analysis/';
-    }
-  </script>
+<script src="{% static 'js/dashboard.js' %}"></script>
+<script>
+  window.minYear = {{ min_year }};
+  window.maxYear = {{ max_year }};
+
+  window.timelineChartData = [
+    {% for item in timeline_data %}
+    { year: {{ item.year }}, funding: {{ item.secured_funding }}, grants: {{ item.active_grants }} }{% if not forloop.last %},{% endif %}
+    {% endfor %}
+  ];
+
+  window.byPIData = [
+    {% for row in by_pi_list %}
+    {
+      pi: "{{ row.pi|escapejs }}",
+      amount: {{ row.amount }},
+      amount_to_ibme: {{ row.amount_to_ibme }},
+      count: {{ row.count }},
+      grants: [{% for g in row.grants %}{amount:{{ g.amount }},amount_to_ibme:{{ g.amount_to_ibme }},start:{{ g.start|default:"null" }},end:{{ g.end|default:"null" }},role:"{{ g.role|default:'' }}"}{% if not forloop.last %},{% endif %}{% endfor %}]
+    }{% if not forloop.last %},{% endif %}
+    {% endfor %}
+  ];
+
+  window.fundingTrendData = [
+    {% for year, data in by_year.items %}
+    { year: {{ year }}, amount: {{ data.amount }} }{% if not forloop.last %},{% endif %}
+    {% endfor %}
+  ];
+
+  window.grantsData = [
+    {% for grant in active_grants_detail %}
+    {
+      title: "{{ grant.title|escapejs }}",
+      organization: "{{ grant.organization|escapejs }}",
+      amount: {{ grant.amount }},
+      amount_to_ibme: {{ grant.amount_to_ibme|default:"null" }},
+      status: "{{ grant.status|default:''|escapejs }}",
+      start_year: {{ grant.start_year }},
+      end_year: {{ grant.end_year }}
+    }{% if not forloop.last %},{% endif %}
+    {% endfor %}
+  ];
+</script>
+<script src="{% static 'js/funding_analysis_report.js' %}"></script>
 </body>
 </html>
