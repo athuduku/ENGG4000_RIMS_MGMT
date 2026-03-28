@@ -1,0 +1,204 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Add Report</title>
+    <link rel="icon" href="{% static 'assets/IBE-logo.png' %}">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css">
+    <link rel="stylesheet" href="{% static 'css/dashboard.css' %}">
+<style>
+    body {
+        background: linear-gradient(rgba(255, 255, 255, 0.92), rgba(255, 255, 255, 0.92)), 
+                    url('{% static "assets/annie-spratt-papers-WMcJU-unsplash-scaled.png" %}');
+        background-size: cover;
+        background-position: center;
+        background-attachment: fixed;
+    }
+
+    .dashboard-main {
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        min-height: 100vh;
+        padding: 20px;
+        max-width: none !important;
+        flex: 1;
+        overflow-y: auto;
+        scrollbar-width: none;
+        -ms-overflow-style: none;
+    }
+
+    .dashboard-main::-webkit-scrollbar {
+        display: none;
+    }
+
+    .upload-container {
+        text-align: center;
+        max-width: 500px;
+    }
+
+    .upload-container h2 {
+        color: #C8102E;
+        font-size: 32px;
+        margin-bottom: 40px;
+        font-weight: 700;
+    }
+
+    .upload-box {
+        border: 3px dashed #C8102E;
+        border-radius: 16px;
+        padding: 80px 30px;
+        cursor: pointer;
+        transition: all 0.3s ease;
+        background: rgba(200, 16, 46, 0.05);
+    }
+
+    .upload-box:hover {
+        background: rgba(200, 16, 46, 0.1);
+        border-color: #a00d26;
+        transform: scale(1.02);
+    }
+
+    .upload-box i {
+        font-size: 64px;
+        color: #C8102E;
+        margin-bottom: 20px;
+        display: block;
+        animation: float 3s ease-in-out infinite;
+    }
+
+    @keyframes float {
+        0%, 100% { transform: translateY(0px); }
+        50% { transform: translateY(-15px); }
+    }
+
+    .upload-box p {
+        color: #333;
+        font-size: 18px;
+        font-weight: 600;
+    }
+
+    .upload-box p:last-child {
+        color: #999;
+        font-size: 13px;
+        font-weight: 400;
+        margin-top: 8px;
+    }
+
+    .upload-box input {
+        display: none;
+    }
+
+    .button {
+        background: #C8102E;
+        color: white;
+        padding: 14px 50px;
+        border: none;
+        border-radius: 8px;
+        font-weight: 700;
+        cursor: pointer;
+        font-size: 16px;
+        transition: all 0.3s ease;
+        margin-top: 30px;
+        margin-bottom: 20px;
+        box-shadow: 0 4px 15px rgba(200, 16, 46, 0.3);
+    }
+
+    .button:hover {
+        background: #a00d26;
+        transform: translateY(-3px);
+        box-shadow: 0 6px 20px rgba(200, 16, 46, 0.4);
+    }
+
+    #fileName {
+        margin-top: 20px;
+        color: #666;
+        font-size: 14px;
+        font-weight: 500;
+    }
+
+    #uploadStatus {
+        margin-top: 20px;
+        color: #666;
+        font-size: 14px;
+        font-weight: 500;
+        min-height: 20px;
+    }
+</style>
+</head>
+
+<body>
+    <div class="dashboard-layout">
+        {% include "../sidebar.html" %}
+
+        <div class="dashboard-main">
+            <div class="upload-container">
+                <h2>Upload Research Report</h2>
+                
+                <form id="uploadForm" enctype="multipart/form-data">
+                    {% csrf_token %}
+                    
+                    <div class="upload-box" onclick="document.getElementById('reportFile').click()">
+                        <i class="bi bi-cloud-arrow-up"></i>
+                        <p>Click to upload or drag and drop</p>
+                        <p>PDF, DOC, DOCX (Max 50MB)</p>
+                        <input type="file" id="reportFile" name="file" accept=".pdf,.doc,.docx" required>
+                    </div>
+
+                    <p id="fileName"></p>
+                    <button type="submit" class="button">Upload & Extract</button>
+                    <p id="uploadStatus"></p>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <script src="{% static 'js/dashboard.js' %}"></script>
+    <script>
+        const fileInput = document.getElementById('reportFile');
+        const fileName = document.getElementById('fileName');
+        const uploadForm = document.getElementById('uploadForm');
+        const uploadStatus = document.getElementById('uploadStatus');
+
+        fileInput.addEventListener('change', function() {
+            if (this.files.length > 0) {
+                fileName.textContent = `Selected: ${this.files[0].name}`;
+            }
+        });
+
+        uploadForm.addEventListener('submit', async function(e) {
+            e.preventDefault();
+
+            const formData = new FormData(this);
+            uploadStatus.textContent = 'Uploading...';
+
+            try {
+                const response = await fetch('/upload-report/', {
+                    method: 'POST',
+                    body: formData,
+                    headers: {
+                        'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value
+                    }
+                });
+
+                const data = await response.json();
+
+                if (data.success) {
+                    uploadStatus.textContent = '✓ Report extracted and saved!';
+                    uploadStatus.style.color = '#90EE90';
+                    setTimeout(() => {
+                        window.location.href = '{% url "view_reports" %}';
+                    }, 2000);
+                } else {
+                    uploadStatus.textContent = `Error: ${data.error}`;
+                    uploadStatus.style.color = '#FFB6C6';
+                }
+            } catch (error) {
+                uploadStatus.textContent = `Error: ${error.message}`;
+                uploadStatus.style.color = '#FFB6C6';
+            }
+        });
+    </script>
+</body>
+</html>
