@@ -1,0 +1,238 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+
+  <meta charset="UTF-8">
+  <title>Add Publication</title>
+  <link rel="icon" href="{% static 'assets/IBE-logo.png' %}">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600;700&display=swap">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css">
+  <link rel="stylesheet" href="{% static 'css/dashboard.css' %}">
+  <link rel="stylesheet" href="{% static 'css/log_activity.css' %}">
+</head>
+<body>
+  <div class="dashboard-layout">
+    {% include "../sidebar.html" %}
+    <div class="dashboard-main">
+      <div class="log-activity-page">
+
+        <!-- Page header -->
+        <div class="page-header">
+          <h2><i class="bi bi-file-earmark-plus-fill"></i> Add Publication</h2>
+          <p>Manually add a publication to your research portfolio.</p>
+        </div>
+
+        <!-- Main form -->
+        <div class="activity-form-card">
+          {% csrf_token %}
+
+          <div class="form-section-label">Publication Details</div>
+
+          <!-- Type + Status row -->
+            <div class="form-group">
+              <label>Publication Type</label>
+              <div class="type-selector">
+                <button type="button" class="type-btn active" data-type="journal">
+                  <i class="bi bi-journal-text"></i> Journal
+                </button>
+                <button type="button" class="type-btn" data-type="conference">
+                  <i class="bi bi-people-fill"></i> Conference
+                </button>
+                <button type="button" class="type-btn" data-type="chapter">
+                  <i class="bi bi-book-fill"></i> Book Chapter
+                </button>
+                <button type="button" class="type-btn" data-type="patent">
+                  <i class="bi bi-award-fill"></i> Patent
+                </button>
+                <button type="button" class="type-btn" data-type="other">
+                  <i class="bi bi-three-dots"></i> Other
+                </button>
+              </div>
+              <input type="hidden" id="publicationType" value="journal">
+            </div>
+
+
+          <!-- Status -->
+          <div class="form-group">
+            <label>Status</label>
+            <div class="toggle-group">
+              <button type="button" class="toggle-btn active" data-field="status" data-value="published">Published</button>
+              <button type="button" class="toggle-btn" data-field="status" data-value="accepted">Accepted</button>
+              <button type="button" class="toggle-btn" data-field="status" data-value="under_review">Under Review</button>
+              <button type="button" class="toggle-btn" data-field="status" data-value="revision_requested">Revision Requested</button>
+              <button type="button" class="toggle-btn" data-field="status" data-value="draft">Draft</button>
+            </div>
+            <input type="hidden" id="publicationStatus" value="published">
+          </div>
+
+          <!-- Title -->
+          <div class="form-group">
+            <label for="pubTitle">Title <span class="required">*</span></label>
+            <input type="text" id="pubTitle" placeholder="e.g. Deep Learning for EMG Signal Classification">
+          </div>
+
+          <!-- Authors -->
+          <div class="form-group">
+            <label for="pubAuthors">Authors <span class="required">*</span></label>
+            <input type="text" id="pubAuthors" placeholder="e.g. Smith J., Doe J., Johnson B.">
+            <span style="font-size:13px;color:#999;margin-top:4px;display:block;">Comma-separated list of authors</span>
+          </div>
+
+          <!-- Journal / Venue -->
+          <div class="form-group">
+            <label for="pubJournal">Journal / Conference / Venue <span class="required">*</span></label>
+            <input type="text" id="pubJournal" placeholder="e.g. IEEE Transactions on Neural Systems and Rehabilitation Engineering">
+          </div>
+
+          <!-- Date + DOI row -->
+          <div class="form-row">
+            <div class="form-group">
+              <label for="pubDate">Publication Date <span class="required">*</span></label>
+              <input type="date" id="pubDate">
+            </div>
+            <div class="form-group">
+              <label for="pubDoi">DOI <span style="font-weight:400;color:#999;font-size:15px;">optional</span></label>
+              <input type="text" id="pubDoi" placeholder="e.g. 10.1109/TNSRE.2024.123456">
+            </div>
+          </div>
+
+          <!-- URL -->
+          <div class="form-group">
+            <label for="pubUrl">URL <span style="font-weight:400;color:#999;font-size:15px;">optional</span></label>
+            <input type="url" id="pubUrl" placeholder="https://...">
+          </div>
+
+          <!-- Abstract -->
+          <div class="form-group">
+            <label for="pubAbstract">Abstract <span style="font-weight:400;color:#999;font-size:15px;">optional</span></label>
+            <textarea id="pubAbstract" rows="4" placeholder="Publication abstract or summary..."></textarea>
+          </div>
+
+          <!-- Submit -->
+          <div class="form-actions">
+            <button id="submitPublication" class="btn-submit">
+              <i class="bi bi-check-circle-fill"></i> Add Publication
+            </button>
+            <a href="{% url 'view_publications' %}" class="btn-cancel-link">Cancel</a>
+            <p id="formStatus" class="form-status" style="margin:0;margin-left:auto;"></p>
+          </div>
+        </div>
+
+        <!-- Right tips panel -->
+        <div class="tips-card">
+          <h3><i class="bi bi-info-circle-fill"></i> To Know</h3>
+
+          <div class="tip-item">
+            <div class="tip-icon"><i class="bi bi-file-earmark-arrow-up-fill"></i></div>
+            <div class="tip-text">
+              <strong>CCV upload</strong>
+              <span>You can bulk-import publications by uploading your CCV XML from the dashboard.</span>
+            </div>
+          </div>
+
+          <div class="tip-item">
+            <div class="tip-icon"><i class="bi bi-link-45deg"></i></div>
+            <div class="tip-text">
+              <strong>Link to projects</strong>
+              <span>After adding, you can link this publication to a project from your Projects page.</span>
+            </div>
+          </div>
+
+          <div class="recent-label">Publication Types</div>
+          <div class="activity-type-list">
+            <div class="activity-type-pill"><i class="bi bi-journal-text"></i> Journal Article</div>
+            <div class="activity-type-pill"><i class="bi bi-people-fill"></i> Conference Paper</div>
+            <div class="activity-type-pill"><i class="bi bi-book-fill"></i> Book Chapter</div>
+            <div class="activity-type-pill"><i class="bi bi-award-fill"></i> Patent</div>
+            <div class="activity-type-pill"><i class="bi bi-three-dots"></i> Other</div>
+          </div>
+        </div>
+
+      </div>
+    </div>
+  </div>
+
+  <script src="{% static 'js/dashboard.js' %}"></script>
+  <script>
+    const csrf = document.querySelector('[name=csrfmiddlewaretoken]').value;
+    let selectedType   = 'journal';
+    let selectedStatus = 'published';
+
+    // ── Type selector ─────────────────────────────────────────
+    document.querySelectorAll('.type-btn').forEach(btn => {
+      btn.addEventListener('click', function () {
+        document.querySelectorAll('.type-btn').forEach(b => b.classList.remove('active'));
+        this.classList.add('active');
+        selectedType = this.dataset.type;
+        document.getElementById('publicationType').value = selectedType;
+      });
+    });
+
+    // ── Status toggle ─────────────────────────────────────────
+    document.querySelectorAll('.toggle-btn[data-field="status"]').forEach(btn => {
+      btn.addEventListener('click', function () {
+        document.querySelectorAll('.toggle-btn[data-field="status"]').forEach(b => b.classList.remove('active'));
+        this.classList.add('active');
+        selectedStatus = this.dataset.value;
+        document.getElementById('publicationStatus').value = selectedStatus;
+      });
+    });
+
+    // ── Submit ────────────────────────────────────────────────
+    document.getElementById('submitPublication').addEventListener('click', async function () {
+      const title   = document.getElementById('pubTitle').value.trim();
+      const authors = document.getElementById('pubAuthors').value.trim();
+      const journal = document.getElementById('pubJournal').value.trim();
+      const date    = document.getElementById('pubDate').value;
+      const status  = document.getElementById('formStatus');
+
+      if (!title || !authors || !journal || !date) {
+        status.textContent = 'Title, authors, journal and date are required.';
+        status.style.color = 'red';
+        return;
+      }
+
+      this.disabled      = true;
+      status.textContent = 'Saving...';
+      status.style.color = '#666';
+
+      const formData = new FormData();
+      formData.append('csrfmiddlewaretoken', csrf);
+      formData.append('title',            title);
+      formData.append('authors',          authors);
+      formData.append('journal',          journal);
+      formData.append('publication_date', date);
+      formData.append('publication_type', selectedType);
+      formData.append('status',           selectedStatus);
+      formData.append('doi',              document.getElementById('pubDoi').value.trim());
+      formData.append('url',              document.getElementById('pubUrl').value.trim());
+      formData.append('abstract',         document.getElementById('pubAbstract').value.trim());
+
+      try {
+        const res  = await fetch('{% url "add_publication" %}', {
+          method: 'POST',
+          body: formData,
+          headers: { 'X-CSRFToken': csrf }
+        });
+        const data = await res.json();
+
+        if (data.success) {
+          status.textContent = '✓ Publication added!';
+          status.style.color = 'green';
+          setTimeout(() => { window.location.href = '{% url "view_publications" %}'; }, 1500);
+        } else {
+          status.textContent = data.error || 'Error saving publication.';
+          status.style.color = 'red';
+          document.getElementById('submitPublication').disabled = false;
+        }
+      } catch (e) {
+        status.textContent = 'Network error. Please try again.';
+        status.style.color = 'red';
+        document.getElementById('submitPublication').disabled = false;
+      }
+    });
+  </script>
+</body>
+</html>

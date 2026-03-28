@@ -1,0 +1,190 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Log Activity</title>
+  <link rel="icon" href="{% static 'assets/IBE-logo.png' %}">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600;700&display=swap">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css">
+  <link rel="stylesheet" href="{% static 'css/dashboard.css' %}">
+  <link rel="stylesheet" href="{% static 'css/log_activity.css' %}">
+</head>
+<body>
+  <div class="dashboard-layout">
+    {% include "../sidebar.html" %}
+    <div class="dashboard-main">
+      <div class="log-activity-page">
+
+        <!-- Page header -->
+        <div class="page-header">
+          <h2><i class="bi bi-plus-circle-fill"></i> Log an Activity</h2>
+          <p>Record a conference, presentation, or KM activity. Tag peers who attended with you.</p>
+        </div>
+
+        <!-- Main form -->
+        <div class="activity-form-card">
+          {% csrf_token %}
+
+          <div class="form-section-label">Activity Details</div>
+
+          <!-- Type -->
+          <div class="form-group">
+            <label>Activity Type</label>
+            <div class="type-selector">
+              <button type="button" class="type-btn active" data-type="presentation">
+                <i class="bi bi-mic-fill"></i> Presentation
+              </button>
+              <button type="button" class="type-btn" data-type="conference">
+                <i class="bi bi-people-fill"></i> Conference
+              </button>
+              <button type="button" class="type-btn" data-type="knowledge_mobilization">
+                <i class="bi bi-lightbulb-fill"></i> KM Activity
+              </button>
+              <button type="button" class="type-btn" data-type="other">
+                <i class="bi bi-three-dots"></i> Other
+              </button>
+            </div>
+            <input type="hidden" id="activityType" value="presentation">
+          </div>
+
+          <!-- Title -->
+          <div class="form-group">
+            <label for="activityTitle">Title / Event Name <span class="required">*</span></label>
+            <input type="text" id="activityTitle" placeholder="e.g. IEEE EMBC 2024 — Neural Signal Processing">
+          </div>
+
+          <!-- Date + Location row -->
+          <div class="form-row">
+            <div class="form-group">
+              <label for="activityDate">Date <span class="required">*</span></label>
+              <input type="date" id="activityDate">
+            </div>
+            <div class="form-group">
+              <label for="activityLocation">Location</label>
+              <input type="text" id="activityLocation" placeholder="e.g. Chicago, USA">
+            </div>
+          </div>
+
+          <!-- Invited + Keynote row -->
+          <div class="form-row">
+            <div class="form-group">
+              <label>Invited Speaker?</label>
+              <div class="toggle-group">
+                <button type="button" class="toggle-btn" data-field="invited" data-value="true">Yes</button>
+                <button type="button" class="toggle-btn" data-field="invited" data-value="false">No</button>
+              </div>
+              <input type="hidden" id="activityInvited" value="">
+            </div>
+            <div class="form-group">
+              <label>Keynote?</label>
+              <div class="toggle-group">
+                <button type="button" class="toggle-btn" data-field="keynote" data-value="true">Yes</button>
+                <button type="button" class="toggle-btn" data-field="keynote" data-value="false">No</button>
+              </div>
+              <input type="hidden" id="activityKeynote" value="">
+            </div>
+          </div>
+
+          <!-- Audience + Event Name row -->
+          <div class="form-row">
+            <div class="form-group">
+              <label for="activityAudience">Main Audience</label>
+              <select id="activityAudience">
+                <option value="">— Select —</option>
+                <option value="Researcher">Researcher</option>
+                <option value="General Public">General Public</option>
+                <option value="Community">Community</option>
+                <option value="Industry">Industry</option>
+                <option value="Policy Maker">Policy Maker</option>
+                <option value="Student">Student</option>
+                <option value="Other">Other</option>
+              </select>
+            </div>
+            <div class="form-group" id="conferenceGroup" style="display:none;">
+              <label>Conference</label>
+              <div class="peer-search-box">
+                <i class="bi bi-search"></i>
+                <input type="text" id="conferenceSearchInput" placeholder="Search conferences e.g. EMBC, IEEE...">
+              </div>
+              <div id="conferenceSearchResults" class="peer-results" style="display:none;"></div>
+              <div id="selectedConference" style="display:none;margin-top:8px;">
+                <div class="tagged-peer-chip" style="width: fit-content;">
+                  <span id="selectedConferenceName"></span>
+                  <button type="button" class="chip-remove" id="clearConference">&times;</button>
+                </div>
+              </div>
+              <div id="createConferenceRow" style="display:none;margin-top:8px;">
+                <button type="button" class="toggle-btn" id="createConferenceBtn" style="font-size:16px">
+                  <i class="bi bi-plus-circle"></i> Create "<span id="createConferenceLabel"></span>"
+                </button>
+              </div>
+              <input type="hidden" id="conferenceId" value="">
+            </div>
+          </div>
+
+          <!-- Notes -->
+          <div class="form-group">
+            <label for="activityDescription">Notes <span style="font-weight:400;color:#999;font-size:15px;">optional</span></label>
+            <textarea id="activityDescription" rows="3" placeholder="Any additional details about the event..."></textarea>
+          </div>
+
+          <div class="form-section-label" style="margin-top:8px;">Tag Peers</div>
+
+          <!-- Peer tagging -->
+          <div class="form-group">
+            <label>Who else attended? <span class="tag-hint">They'll be notified to confirm</span></label>
+            <div class="peer-search-box">
+              <i class="bi bi-search"></i>
+              <input type="text" id="peerSearchInput" placeholder="Search students or researchers by name...">
+            </div>
+            <div id="peerSearchResults" class="peer-results" style="display:none;"></div>
+            <div id="taggedPeers" class="tagged-peers"></div>
+          </div>
+
+          <!-- Submit -->
+          <div class="form-actions">
+            <button id="submitActivity" class="btn-submit">
+              <i class="bi bi-check-circle-fill"></i> Log Activity
+            </button>
+            <a href="/dashboard/" class="btn-cancel-link">Cancel</a>
+            <p id="formStatus" class="form-status" style="margin:0;margin-left:auto;"></p>
+          </div>
+        </div>
+
+        <!-- Right tips panel -->
+        <div class="tips-card">
+          <h3><i class="bi bi-info-circle-fill"></i> To Know</h3>
+
+          <div class="tip-item">
+            <div class="tip-icon"><i class="bi bi-tag-fill"></i></div>
+            <div class="tip-text">
+              <strong>Peer tagging</strong>
+              <span>Tag others who attended they'll confirm and it'll appear on their profile too.</span>
+            </div>
+          </div>
+
+          <div class="tip-item">
+            <div class="tip-icon"><i class="bi bi-file-earmark-arrow-up-fill"></i></div>
+            <div class="tip-text">
+              <strong>CCV upload</strong>
+              <span>You can also bulk-import activities by uploading your CCV XML from the dashboard.</span>
+            </div>
+          </div>
+
+          <div class="recent-label">Activity Types</div>
+          <div class="activity-type-list">
+            <div class="activity-type-pill"><i class="bi bi-mic-fill"></i> Presentation</div>
+            <div class="activity-type-pill"><i class="bi bi-people-fill"></i> Conference</div>
+            <div class="activity-type-pill"><i class="bi bi-lightbulb-fill"></i> KM Activity</div>
+            <div class="activity-type-pill"><i class="bi bi-three-dots"></i> Other</div>
+          </div>
+        </div>
+
+      </div>
+    </div>
+  </div>
+  <script src="{% static 'js/log_activity.js' %}"></script>
+</body>
+</html>
