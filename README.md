@@ -1,6 +1,6 @@
 # RIMS | Research Information Management System
 
-A Django 5.2 + PostgreSQL web application built for the UNB Institute of Biomedical Engineering (IBME). RIMS centralises researcher profiles, CCV XML bulk imports, project/publication/activity tracking, supervision records, and director-level reporting for ~50 users across three roles: Admin, Researcher, and Student.
+A Django 5.2+ PostgreSQL web application built for the UNB Institute of Biomedical Engineering (IBME). RIMS centralises researcher profiles, CCV XML bulk imports, project/publication/activity tracking, supervision records, and director-level reporting for ~50 users across three roles: Admin, Researcher, and Student.
 
 ---
 
@@ -107,6 +107,11 @@ ENGG4000_RIMS_MGMT/
 └── README.md
 ```
 
+## Architecture
+
+![RIMS Architecture](architecture.png)
+
+
 ---
 
 ## Prerequisites
@@ -187,7 +192,7 @@ python manage.py collectstatic
 cd backend
 python manage.py runserver
 ```
-Environment Setup
+
 The app will be available at `http://127.0.0.1:8000`.
 
 The Django admin panel is at `http://127.0.0.1:8000/admin-portal`.
@@ -278,3 +283,8 @@ Key packages (see `requirements.txt` for pinned versions):
 - `jsonschema==4.25.1`
 - `qrcode==8.2`
 - `Pillow==12.0.0`
+
+## License
+
+Copyright © 2026 University of New Brunswick - Institute of Biomedical Engineering.  
+All rights reserved. This software is proprietary and confidential.
