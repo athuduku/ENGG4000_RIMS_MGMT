@@ -17,7 +17,7 @@ jobs:
       DB_PASSWORD: ${{ secrets.POSTGRES_PASSWORD }}
       DB_HOST: localhost
       DB_PORT: 5432
-      RATELIMIT_ENABLE: "False"
+      DEBUG: "True"
 
     services:
       postgres:

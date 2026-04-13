@@ -31,7 +31,8 @@ class BulkUploadTests(TestCase):
     def test_non_xml_file(self):
         file = SimpleUploadedFile("file.txt", b"bad")
 
-        response = self.client.post("/bulk-upload/", {"files": [file]})
+        response = self.client.post("/bulk-upload/", {"files": [file]}, 
+                    HTTP_X_REQUESTED_WITH='XMLHttpRequest')
 
         self.assertEqual(response.status_code, 200)
         self.assertIn("Only XML files are allowed", str(response.content))

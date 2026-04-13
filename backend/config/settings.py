@@ -62,7 +62,7 @@ CACHES = {
 }
 
 RATELIMIT_USE_CACHE = 'default'
-RATELIMIT_ENABLE = False
+RATELIMIT_ENABLE = False if DEBUG else True
 
 SILENCED_SYSTEM_CHECKS = ['django_ratelimit.E003']
 

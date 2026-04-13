@@ -17,7 +17,7 @@ class BulkUploadFullTests(TestCase):
             self.is_staff = False
 
     def setUp(self):
-        self.client = Client()
+        self.client = Client(enforce_csrf_checks=False)
 
         self.admin = User.objects.create_user(
             username="admin",
@@ -25,7 +25,6 @@ class BulkUploadFullTests(TestCase):
             password="pass"
         )
 
-        # 🔥 FORCE EVERYTHING BEFORE SAVE
         self.admin.user_type = "admin"
         self.admin.approval_status = "approved"
         self.admin.is_staff = True

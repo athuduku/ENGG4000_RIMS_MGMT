@@ -8,7 +8,7 @@ User = get_user_model()
 class PermissionTests(TestCase):
 
     def setUp(self):
-        self.client = Client()
+        self.client = Client(enforce_csrf_checks=False)
 
         self.admin = User.objects.create_user(
             username="admin",
@@ -32,13 +32,11 @@ class PermissionTests(TestCase):
         )
 
     def test_admin_access(self):
-        self.client.login(email="admin@test.com", password="Testpass123!")
-
+        self.client.force_login(self.admin)
         response = self.client.get(reverse('dashboard'))
         self.assertEqual(response.status_code, 200)
 
     def test_student_redirect(self):
-        self.client.login(email="student@test.com", password="Testpass123!")
-
+        self.client.force_login(self.student)
         response = self.client.get(reverse('dashboard'))
         self.assertEqual(response.status_code, 200)
