@@ -1,4 +1,4 @@
-name: Simple Django CI
+name: RIMS CI
 
 on:
   push:
@@ -11,23 +11,21 @@ jobs:
     runs-on: ubuntu-latest
 
     env:
+      SECRET_KEY: ${{ secrets.SECRET_KEY }}
       DB_NAME: ${{ secrets.DB_NAME }}
       DB_USER: ${{ secrets.POSTGRES_USER }}
       DB_PASSWORD: ${{ secrets.POSTGRES_PASSWORD }}
       DB_HOST: localhost
       DB_PORT: 5432
+      RATELIMIT_ENABLE: "False"
 
     services:
       postgres:
         image: postgres:15
         env:
-          SECRET_KEY: ${{ secrets.SECRET_KEY }}
-          DB_NAME: ${{ secrets.DB_NAME }}
-          DB_USER: ${{ secrets.POSTGRES_USER }}
-          DB_PASSWORD: ${{ secrets.POSTGRES_PASSWORD }}
-          DB_HOST: localhost
-          DB_PORT: 5432
-          RATELIMIT_ENABLE: "False"
+          POSTGRES_DB: ${{ secrets.POSTGRES_DB }}
+          POSTGRES_USER: ${{ secrets.POSTGRES_USER }}
+          POSTGRES_PASSWORD: ${{ secrets.POSTGRES_PASSWORD }}
         ports:
           - 5432:5432
         options: >-
@@ -66,5 +64,3 @@ jobs:
         run: |
           cd backend
           python manage.py test config.tests
-
-      
