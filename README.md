@@ -153,7 +153,7 @@ python -c "from django.core.management.utils import get_random_secret_key; print
 
 ```bash
 # 1. Clone the repo
-git clone https://github.com/athuduke/ENGG4000_RIMS_MGMT.git
+git clone https://github.com/athuduku/ENGG4000_RIMS_MGMT.git
 cd ENGG4000_RIMS_MGMT
 
 # 2. Create and activate a virtual environment
