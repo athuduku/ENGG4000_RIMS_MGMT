@@ -172,7 +172,12 @@ pip install -r requirements.txt
 # 4. Create the .env file (see Environment Setup above)
 
 # 5. Create the PostgreSQL database
+
+# Option A (CLI - if psql is available)
 psql -U postgres -c "CREATE DATABASE rims_db;"
+
+# Option B (Windows / GUI - recommended if psql is not recognized)
+# Open pgAdmin → Databases → Create → Database → Name: rims_db
 
 # 6. Run migrations
 python manage.py migrate
