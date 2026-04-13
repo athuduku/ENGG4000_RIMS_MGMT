@@ -1,0 +1,383 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Per-Conference Equity Report</title>
+  <link rel="icon" href="{% static 'assets/IBE-logo.png' %}">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css">
+  <link rel="stylesheet" href="{% static 'css/dashboard.css' %}">
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --red: #C8102E; --red-dark: #9e0c24; --red-pale: #fff5f6;
+      --ink: #1a1a2e; --muted: #6b7280; --light: #9ca3af;
+      --border: #e5e7eb; --surface: #f9fafb; --white: #ffffff;
+    }
+
+    .report-shell {
+      font-family: 'DM Sans', sans-serif;
+      max-width: 1500px;
+      margin: 0 auto;
+    }
+
+    /* ── Header ─────────────────────────── */
+    .report-top {
+      display: flex; justify-content: space-between; align-items: center;
+      padding-bottom: 20px; margin-bottom: 24px;
+      border-bottom: 1px solid var(--border); flex-wrap: wrap; gap: 12px;
+    }
+    .report-top h1 {
+      font-size: 24px; font-weight: 700; color: var(--ink); margin: 0;
+      display: flex; align-items: center; gap: 10px;
+    }
+    .report-top h1 i { color: var(--red); font-size: 22px; }
+    .report-top .subtitle { font-size: 16px; color: var(--muted); margin-top: 4px; }
+
+    /* ── Conference selector ────────────── */
+    .conf-select-card {
+      background: var(--white); border: 1px solid var(--border);
+      border-radius: 12px; padding: 20px 24px; margin-bottom: 24px;
+      display: flex; gap: 12px; align-items: flex-end; flex-wrap: wrap;
+    }
+    .conf-select-card label {
+      font-size: 16px; font-weight: 700; color: var(--muted);
+      text-transform: uppercase; letter-spacing: 0.3px;
+      display: block; margin-bottom: 6px;
+    }
+    .conf-select-card select {
+      flex: 1; min-width: 240px;
+      padding: 10px 14px; border: 1px solid var(--border);
+      border-radius: 8px; font-size: 16px; font-family: inherit;
+      color: var(--ink); background: var(--white); outline: none;
+    }
+    .conf-select-card select:focus { border-color: var(--red); }
+    .btn-run {
+      background: var(--red); color: #fff; border: none;
+      border-radius: 8px; padding: 10px 20px;
+      font-size: 14px; font-weight: 600;
+      cursor: pointer; font-family: inherit;
+      display: inline-flex; align-items: center; gap: 6px;
+      transition: background 0.2s;
+    }
+    .btn-run:hover { background: var(--red-dark); }
+
+    /* ── KPI row ────────────────────────── */
+    .kpi-row {
+      display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+      gap: 12px; margin-bottom: 24px;
+    }
+    .kpi {
+      background: var(--white); border: 1px solid var(--border); border-radius: 10px;
+      padding: 16px 18px; text-align: center;
+      width: 30%;
+    }
+    .kpi-val { font-size: 26px; font-weight: 700; color: var(--red); line-height: 1.1; }
+    .kpi-lbl { font-size: 16px; font-weight: 600; color: var(--muted); text-transform: uppercase; letter-spacing: 0.5px; margin-top: 6px; }
+    .kpi.blue .kpi-val { color: #1d4ed8; }
+
+    /* ── Collapsible sections ──────────── */
+    .report-section {
+      margin-bottom: 20px; background: var(--white);
+      border: 1px solid var(--border); border-radius: 12px; overflow: hidden;
+    }
+    .section-header {
+      display: flex; justify-content: space-between; align-items: center;
+      padding: 16px 20px; cursor: pointer; user-select: none;
+      transition: background 0.15s;
+    }
+    .section-header:hover { background: var(--surface); }
+    .section-header h2 {
+      font-size: 16px; font-weight: 700; color: var(--red); margin: 0;
+      text-transform: uppercase; letter-spacing: 0.5px;
+      display: flex; align-items: center; gap: 8px;
+    }
+    .section-header h2 i { font-size: 16px; }
+    .section-chevron { font-size: 16px; color: var(--light); transition: transform 0.2s; }
+    .report-section.collapsed .section-body { display: none; }
+    .report-section.collapsed .section-chevron { transform: rotate(-90deg); }
+    .section-body { padding: 0 20px 20px; }
+
+    /* ── Equity table ──────────────────── */
+    .tbl { width: 100%; border-collapse: collapse; }
+    .tbl thead { background: var(--surface); }
+    .tbl th {
+      padding: 10px 14px; text-align: left; font-size: 16px; font-weight: 700;
+      color: var(--muted); text-transform: uppercase; letter-spacing: 0.4px;
+      border-bottom: 1px solid var(--border);
+    }
+    .tbl td {
+      padding: 10px 14px; font-size: 16px; color: var(--ink);
+      border-bottom: 1px solid #f3f4f6;
+      width: 20%;
+    }
+    .tbl tbody tr:last-child td { border-bottom: none; }
+    .tbl tbody tr:hover td { background: #fefefe; }
+
+    /* ── Bar chart ─────────────────────── */
+    .bar-cell { display: flex; align-items: center; gap: 10px; }
+    .bar-wrap { flex: 1; height: 8px; background: #f0f0f0; border-radius: 4px; overflow: hidden; }
+    .bar-fill { height: 100%; border-radius: 4px; min-width: 2px; }
+    .bar-fill.gender     { background: #7c3aed; }
+    .bar-fill.indigenous { background: #059669; }
+    .bar-fill.residency  { background: #1d4ed8; }
+    .bar-fill.degree     { background: var(--red); }
+    .bar-pct { font-size: 16px; color: var(--light); white-space: nowrap; min-width: 36px; text-align: right; }
+
+    /* ── Suppressed message ────────────── */
+    .suppressed-msg {
+      background: #fff7ed; border: 1px solid #fed7aa;
+      border-radius: 12px; padding: 20px 24px;
+      color: #92400e; font-size: 16px;
+      display: flex; align-items: flex-start; gap: 10px;
+    }
+    .suppressed-msg i { font-size: 18px; margin-top: 1px; flex-shrink: 0; }
+
+    /* ── Empty state ───────────────────── */
+    .empty-box {
+      text-align: center; padding: 60px 20px; color: var(--light);
+    }
+    .empty-box i { font-size: 44px; display: block; margin-bottom: 10px; }
+    .empty-box p { font-size: 16px; margin: 0; }
+
+    /* ── Privacy note ──────────────────── */
+    .privacy-note {
+      background: var(--surface); border: 1px solid var(--border);
+      border-radius: 10px; padding: 14px 18px;
+      font-size: 16px; color: var(--muted); margin-top: 20px;
+      display: flex; align-items: flex-start; gap: 8px;
+    }
+    .privacy-note i { color: var(--light); font-size: 16px; margin-top: 1px; }
+
+    @media (max-width: 768px) {
+      .report-shell { padding: 0 12px; }
+      .conf-select-card { flex-direction: column; }
+      .kpi-row { grid-template-columns: repeat(2, 1fr); }
+    }
+
+    .bar-fill.race { background: #f59e0b; }
+    
+  </style>
+</head>
+<body>
+<div class="dashboard-layout">
+  {% include "../sidebar.html" %}
+  <div class="dashboard-main">
+    <div class="report-shell">
+
+      <!-- Header -->
+      <div class="report-top">
+        <div>
+          <h1><i class="bi bi-shield-check"></i> Per-Conference Equity Report</h1>
+          <div class="subtitle">Demographic breakdown of student conference attendance · 3-year window · 5-person suppression rule</div>
+        </div>
+      </div>
+
+      <!-- Conference selector -->
+      <form method="get" class="conf-select-card">
+        <div style="flex:1;">
+          <label for="conference_id">Select Conference</label>
+          <select name="conference_id" id="conference_id">
+            <option value="">— Choose a conference —</option>
+            {% for conf in conferences %}
+            <option value="{{ conf.id }}" {% if conf_id == conf.id|stringformat:"s" %}selected{% endif %}>
+              {{ conf }} ({{ conf.activity_count }} activit{{ conf.activity_count|pluralize:"y,ies" }})
+            </option>
+            {% endfor %}
+          </select>
+        </div>
+        <button type="submit" class="btn-run">
+          <i class="bi bi-bar-chart"></i> Run Report
+        </button>
+      </form>
+
+      {% if selected_conf %}
+
+        {% if suppressed %}
+        <!-- Suppressed -->
+        <div class="suppressed-msg">
+          <i class="bi bi-shield-lock"></i>
+          <div>
+            <strong>Results suppressed.</strong> Fewer than {{ MIN_THRESHOLD }} consenting students attended
+            <strong>{{ selected_conf }}</strong>. Data is hidden to protect individual privacy.
+          </div>
+        </div>
+
+        {% elif result %}
+        <!-- KPIs -->
+        <div class="kpi-row">
+          <div class="kpi">
+            <div class="kpi-val">{{ result.total }}</div>
+            <div class="kpi-lbl">Consenting Students</div>
+          </div>
+        </div>
+
+        <!-- Gender -->
+        <div class="report-section">
+          <div class="section-header" onclick="this.parentElement.classList.toggle('collapsed')">
+            <h2><i class="bi bi-gender-ambiguous"></i> Gender</h2>
+            <i class="bi bi-chevron-down section-chevron"></i>
+          </div>
+          <div class="section-body">
+            <table class="tbl">
+              <thead><tr><th>Category</th><th>Count</th><th style="width:45%;">Distribution</th></tr></thead>
+              <tbody>
+                {% for row in result.gender %}
+                <tr>
+                  <td><strong>{{ row.label }}</strong></td>
+                  <td>{{ row.count }}</td>
+                  <td>
+                    <div class="bar-cell">
+                      <div class="bar-wrap">
+                        <div class="bar-fill gender" style="width:{% widthratio row.count result.total 100 %}%;"></div>
+                      </div>
+                      <span class="bar-pct">{% widthratio row.count result.total 100 %}%</span>
+                    </div>
+                  </td>
+                </tr>
+                {% endfor %}
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        <!-- Indigenous Identity -->
+        <div class="report-section">
+          <div class="section-header" onclick="this.parentElement.classList.toggle('collapsed')">
+            <h2><i class="bi bi-feather"></i> Indigenous Identity</h2>
+            <i class="bi bi-chevron-down section-chevron"></i>
+          </div>
+          <div class="section-body">
+            <table class="tbl">
+              <thead><tr><th>Category</th><th>Count</th><th style="width:45%;">Distribution</th></tr></thead>
+              <tbody>
+                {% for row in result.indigenous %}
+                <tr>
+                  <td><strong>{{ row.label }}</strong></td>
+                  <td>{{ row.count }}</td>
+                  <td>
+                    <div class="bar-cell">
+                      <div class="bar-wrap">
+                        <div class="bar-fill indigenous" style="width:{% widthratio row.count result.total 100 %}%;"></div>
+                      </div>
+                      <span class="bar-pct">{% widthratio row.count result.total 100 %}%</span>
+                    </div>
+                  </td>
+                </tr>
+                {% endfor %}
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        <!-- Residency Status -->
+        <div class="report-section">
+          <div class="section-header" onclick="this.parentElement.classList.toggle('collapsed')">
+            <h2><i class="bi bi-globe-americas"></i> Residency Status</h2>
+            <i class="bi bi-chevron-down section-chevron"></i>
+          </div>
+          <div class="section-body">
+            <table class="tbl">
+              <thead><tr><th>Category</th><th>Count</th><th style="width:45%;">Distribution</th></tr></thead>
+              <tbody>
+                {% for row in result.residency %}
+                <tr>
+                  <td><strong>{{ row.label }}</strong></td>
+                  <td>{{ row.count }}</td>
+                  <td>
+                    <div class="bar-cell">
+                      <div class="bar-wrap">
+                        <div class="bar-fill residency" style="width:{% widthratio row.count result.total 100 %}%;"></div>
+                      </div>
+                      <span class="bar-pct">{% widthratio row.count result.total 100 %}%</span>
+                    </div>
+                  </td>
+                </tr>
+                {% endfor %}
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        <!-- Race / Ethnicity -->
+        <div class="report-section">
+          <div class="section-header" onclick="this.parentElement.classList.toggle('collapsed')">
+            <h2><i class="bi bi-people"></i> Race / Ethnicity</h2>
+            <i class="bi bi-chevron-down section-chevron"></i>
+          </div>
+          <div class="section-body">
+            <table class="tbl">
+              <thead><tr><th>Category</th><th>Count</th><th style="width:45%;">Distribution</th></tr></thead>
+              <tbody>
+                {% for row in result.race_ethnicity %}
+                <tr>
+                  <td><strong>{{ row.label }}</strong></td>
+                  <td>{{ row.count }}</td>
+                  <td>
+                    <div class="bar-cell">
+                      <div class="bar-wrap">
+                        <div class="bar-fill race" style="width:{% widthratio row.count result.total 100 %}%;"></div>
+                      </div>
+                      <span class="bar-pct">{% widthratio row.count result.total 100 %}%</span>
+                    </div>
+                  </td>
+                </tr>
+                {% endfor %}
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        <!-- Degree Level -->
+        <div class="report-section">
+          <div class="section-header" onclick="this.parentElement.classList.toggle('collapsed')">
+            <h2><i class="bi bi-mortarboard"></i> Degree Level</h2>
+            <i class="bi bi-chevron-down section-chevron"></i>
+          </div>
+          <div class="section-body">
+            <table class="tbl">
+              <thead><tr><th>Category</th><th>Count</th><th style="width:45%;">Distribution</th></tr></thead>
+              <tbody>
+                {% for row in result.degree %}
+                <tr>
+                  <td><strong>{{ row.label }}</strong></td>
+                  <td>{{ row.count }}</td>
+                  <td>
+                    <div class="bar-cell">
+                      <div class="bar-wrap">
+                        <div class="bar-fill degree" style="width:{% widthratio row.count result.total 100 %}%;"></div>
+                      </div>
+                      <span class="bar-pct">{% widthratio row.count result.total 100 %}%</span>
+                    </div>
+                  </td>
+                </tr>
+                {% endfor %}
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+
+
+        <!-- Privacy note -->
+        <div class="privacy-note">
+          <i class="bi bi-info-circle"></i>
+          <span>Only consenting MSc/PhD students are included. Data is suppressed when fewer than {{ MIN_THRESHOLD }} students are present to protect individual privacy.</span>
+        </div>
+
+        {% endif %}
+
+      {% else %}
+      <!-- No conference selected -->
+      <div class="empty-box">
+        <i class="bi bi-shield-check"></i>
+        <p>Select a conference above to view the equity breakdown.</p>
+      </div>
+      {% endif %}
+
+    </div>
+  </div>
+</div>
+<script src="{% static 'js/dashboard.js' %}"></script>
+</body>
+</html>

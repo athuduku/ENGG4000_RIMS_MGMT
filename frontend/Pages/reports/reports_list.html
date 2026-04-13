@@ -1,0 +1,197 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Reports</title>
+  <link rel="icon" href="{% static 'assets/IBE-logo.png' %}">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css">
+  <link rel="stylesheet" href="{% static 'css/dashboard.css' %}">
+  <style>
+    .reports-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(370px, 1fr));
+      gap: 20px;
+      margin-top: 30px;
+    }
+
+    .report-card {
+      background: white;
+      padding: 30px;
+      border-radius: 8px;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+      border-top: 4px solid #C8102E;
+      cursor: pointer;
+      transition: all 0.3s;
+      text-decoration: none;
+      color: inherit;
+    }
+
+    .report-card:hover {
+      transform: translateY(-4px);
+      box-shadow: 0 6px 16px rgba(0,0,0,0.15);
+    }
+
+    .report-card.disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+      pointer-events: none;
+      border-top-color: #ccc;
+    }
+
+    .report-card h3 {
+      color: #C8102E;
+      margin-top: 0;
+      font-size: 17px;
+    }
+
+    .report-card.disabled h3 { color: #999; }
+
+    .report-card p {
+      color: #666;
+      font-size: 15px;
+      line-height: 1.6;
+    }
+
+    .report-icon {
+      font-size: 40px;
+      color: #C8102E;
+      margin-bottom: 15px;
+    }
+
+    .report-card.disabled .report-icon { color: #ccc; }
+
+    .coming-soon-tag {
+      display: inline-block;
+      background: #f3f4f6;
+      color: #9ca3af;
+      font-size: 11px;
+      font-weight: 600;
+      padding: 2px 8px;
+      border-radius: 10px;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      margin-bottom: 10px;
+    }
+
+    .live-tag {
+      display: inline-block;
+      background: #dcfce7;
+      color: #166534;
+      font-size: 12px;
+      font-weight: 600;
+      padding: 2px 8px;
+      border-radius: 4px;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      margin-bottom: 10px;
+    }
+
+    
+  </style>
+</head>
+
+<body>
+  <div class="dashboard-layout">
+
+    {% include "../sidebar.html" %}
+
+    <div class="dashboard-main">
+
+      <h1 style="color: #C8102E; margin-bottom: 10px;">Reports</h1>
+      
+      <p style="color: #666; margin-bottom: 30px; font-size: 17px;">Generate analytics and insights from your research data</p>
+
+      <div class="reports-grid">
+
+        <a href="{% url 'active_projects_report' %}" class="report-card">
+          <div class="report-icon"><i class="bi bi-briefcase"></i></div>
+          <span class="live-tag">Live Data</span>
+          <h3>Active Projects Report</h3>
+          <p>Full project dossiers for all active grants such as HQP, partners, funding breakdown, KM activities, IP, publications, and next steps.</p>
+        </a>
+        
+        <a href="{% url 'activity_report' %}" class="report-card">
+          <div class="report-icon"><i class="bi bi-calendar2-check"></i></div>
+          <span class="live-tag">Live Data</span>
+          <h3>Activity Report</h3>
+          <p>View all researcher and student activities by academic year. Filter by conferences, KM, media, and more. Export to CSV.</p>
+        </a>
+
+        <a href="{% url 'funding_analysis_report' %}" class="report-card">
+          <div class="report-icon"><i class="bi bi-cash-coin"></i></div>
+          <span class="live-tag">Live Data</span>
+          <h3>Funding Analysis</h3>
+          <p>Analyze funding sources and trends. See which organizations provide the most support and track funding over time.</p>
+        </a>
+
+
+        <a href="{% url 'grad_completion_report' %}" class="report-card">
+          <div class="report-icon"><i class="bi bi-hourglass-split"></i></div>
+          <span class="live-tag">Live Data</span>
+          <h3>Grad Completion Report</h3>
+          <p>How long do MSc and PhD students take to complete their degrees? Broken down by degree type, supervisor, and graduation year.</p>
+        </a>
+
+        <a href="{% url 'enrollment_trends_report' %}" class="report-card">
+          <div class="report-icon"><i class="bi bi-graph-up"></i></div>
+          <span class="live-tag">Live Data</span>
+          <h3>Enrollment Trends</h3>
+          <p>Active MSc and PhD students per year over the last N years. Filter by supervisor, department, and degree type.</p>
+        </a>
+
+        <a href="{% url 'conference_equity_summary' %}" class="report-card">
+          <div class="report-icon"><i class="bi bi-bar-chart-steps"></i></div>
+          <span class="live-tag">Live Data</span>
+          <h3>Conference Participation by PI & Department</h3>
+          <p>
+            Analyze conference attendance across student groups over the last 3 years.
+            Broken down by supervisor, department, and degree level (MSc vs PhD).
+            Highlights groups with below-average participation.
+          </p>
+          <p style="font-size:14px;color:#6b7280;margin-top:10px;">
+            <i class="bi bi-link-45deg"></i>
+            {{ linked_students }} linked student{{ linked_students|pluralize }}
+          </p>
+        </a>
+
+        {% if consenting_students >= 5 %}
+        <a href="{% url 'conference_equity_report' %}" class="report-card">
+        {% else %}
+        <div class="report-card disabled">
+        {% endif %}
+
+          <div class="report-icon"><i class="bi bi-people"></i></div>
+          <span class="live-tag">Live Data</span>
+
+          <h3>Conference Equity Export</h3>
+
+          <p>
+            Aggregated EDI statistics for consenting graduate students gender,
+            residency, indigenous identity, and conference participation.
+            For P&amp;C reporting.
+          </p>
+
+          <p style="font-size:14px;color:#6b7280;margin-top:10px;">
+            <i class="bi bi-person-check"></i>
+            {{ consenting_students }} student{{ consenting_students|pluralize }} consented
+
+            {% if consenting_students < 5 %}
+              — <span style="color:#C8102E;font-weight:700;">minimum 5 required</span>
+            {% endif %}
+          </p>
+
+        {% if consenting_students >= 5 %}
+        </a>
+        {% else %}
+        </div>
+        {% endif %}
+
+      </div>
+
+    </div>
+  </div>
+
+  <script src="{% static 'js/dashboard.js' %}"></script>
+</body>
+</html>

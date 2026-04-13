@@ -1,0 +1,401 @@
+{% load static %}
+{% load humanize %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Grad Completion Report</title>
+  <link rel="icon" href="{% static 'assets/IBE-logo.png' %}">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css">
+  <link rel="stylesheet" href="{% static 'css/dashboard.css' %}">
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/echarts/5.4.3/echarts.min.js"></script>
+  <style>
+    :root {
+      --red: #C8102E; --red-dark: #9e0c24; --red-pale: #fff5f6;
+      --ink: #1a1a2e; --muted: #6b7280; --light: #9ca3af;
+      --border: #e5e7eb; --surface: #f9fafb; --white: #ffffff;
+    }
+
+    .report-shell {
+      font-family: 'DM Sans', sans-serif;
+      max-width: 1500px;
+      margin: 0 auto;
+    }
+
+    /* ── Header ─────────────────────────── */
+    .report-top {
+      display: flex; justify-content: space-between; align-items: center;
+      padding-bottom: 20px; margin-bottom: 24px;
+      border-bottom: 1px solid var(--border); flex-wrap: wrap; gap: 12px;
+    }
+    .report-top h1 {
+      font-size: 24px; font-weight: 700; color: var(--ink); margin: 0;
+      display: flex; align-items: center; gap: 10px;
+    }
+    .report-top h1 i { color: var(--red); font-size: 22px; }
+    .report-top .subtitle { font-size: 16px; color: var(--muted); margin-top: 4px; }
+    .btn-export {
+      display: inline-flex; align-items: center; gap: 6px;
+      background: var(--white); color: var(--red); border: 1.5px solid var(--red);
+      border-radius: 8px; padding: 8px 16px; font-size: 16px; font-weight: 600;
+      text-decoration: none; transition: background 0.2s;
+    }
+    .btn-export:hover { background: var(--red-pale); }
+
+    /* ── Filter bar ─────────────────────── */
+    .filter-row {
+      display: flex; gap: 10px; flex-wrap: wrap; align-items: flex-end;
+      margin-bottom: 24px;
+    }
+    .filter-row select {
+      border: 1px solid var(--border); border-radius: 8px; padding: 8px 12px;
+      font-size: 16px; color: var(--ink); background: var(--white);
+      min-width: 140px; outline: none; font-family: inherit;
+    }
+    .filter-row select:focus { border-color: var(--red); }
+    .filter-row .btn-apply {
+      background: var(--red); color: #fff; border: none; border-radius: 8px;
+      padding: 8px 16px; font-size: 16px; font-weight: 600; cursor: pointer;
+    }
+    .filter-row .btn-apply:hover { background: var(--red-dark); }
+    .filter-row .btn-reset {
+      background: none; color: var(--muted); border: 1px solid var(--border);
+      border-radius: 8px; padding: 8px 14px; font-size: 16px; cursor: pointer;
+      text-decoration: none;
+    }
+
+    /* ── KPI cards ──────────────────────── */
+    .kpi-row {
+      display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+      gap: 12px; margin-bottom: 28px;
+    }
+    .kpi {
+      background: var(--white); border: 1px solid var(--border); border-radius: 10px;
+      padding: 16px 18px; text-align: center;
+    }
+    .kpi-val { font-size: 26px; font-weight: 700; color: var(--red); line-height: 1.1; }
+    .kpi-lbl { font-size: 16px; font-weight: 600; color: var(--muted); text-transform: uppercase; letter-spacing: 0.5px; margin-top: 6px; }
+    .kpi.blue .kpi-val { color: #1d4ed8; }
+    .kpi.purple .kpi-val { color: #7c3aed; }
+    .kpi.green .kpi-val { color: #059669; }
+
+    /* ── Collapsible sections ──────────── */
+    .report-section {
+      margin-bottom: 20px;
+      background: var(--white);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      overflow: hidden;
+    }
+    .section-header {
+      display: flex; justify-content: space-between; align-items: center;
+      padding: 16px 20px; cursor: pointer; user-select: none;
+      transition: background 0.15s;
+    }
+    .section-header:hover { background: var(--surface); }
+    .section-header h2 {
+      font-size: 15px; font-weight: 700; color: var(--red); margin: 0;
+      text-transform: uppercase; letter-spacing: 0.5px;
+      display: flex; align-items: center; gap: 8px;
+    }
+    .section-header h2 i { font-size: 15px; }
+    .section-chevron {
+      font-size: 14px; color: var(--light); transition: transform 0.2s;
+    }
+    .report-section.collapsed .section-body { display: none; }
+    .report-section.collapsed .section-chevron { transform: rotate(-90deg); }
+    .section-body { padding: 0 20px 20px; }
+
+    /* ── Chart ──────────────────────────── */
+    .chart-box { height: 280px; margin-bottom: 4px; }
+
+    /* ── Degree cards ──────────────────── */
+    .degree-grid {
+      display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+      gap: 12px;
+    }
+    .degree-card {
+      border: 1px solid var(--border); border-radius: 10px;
+      padding: 16px; border-left: 3px solid var(--red);
+    }
+    .degree-card h4 {
+      font-size: 16px; font-weight: 700; color: var(--red); margin: 0 0 12px;
+      text-transform: uppercase; letter-spacing: 0.3px;
+    }
+    .degree-row {
+      display: flex; justify-content: space-between; padding: 4px 0;
+      font-size: 16px; border-bottom: 1px solid #f5f5f5;
+    }
+    .degree-row:last-child { border-bottom: none; }
+    .degree-row span:first-child { color: var(--muted); }
+    .degree-row span:last-child { font-weight: 700; color: var(--ink); }
+
+    /* ── Tables ─────────────────────────── */
+    .tbl { width: 100%; border-collapse: collapse; }
+    .tbl thead { background: var(--surface); }
+    .tbl th {
+      padding: 10px 14px; text-align: left; font-size: 16px; font-weight: 700;
+      color: var(--muted); text-transform: uppercase; letter-spacing: 0.4px;
+      border-bottom: 1px solid var(--border);
+    }
+    .tbl td {
+      padding: 10px 14px; font-size: 16px; color: var(--ink);
+      border-bottom: 1px solid #f3f4f6;
+    }
+    .tbl tbody tr:last-child td { border-bottom: none; }
+    .tbl tbody tr:hover td { background: #fefefe; }
+    .badge-msc { background:#dbeafe; color:#1d4ed8; padding:2px 8px; border-radius:8px; font-size:11px; font-weight:700; }
+    .badge-phd { background:#ede9fe; color:#7c3aed; padding:2px 8px; border-radius:8px; font-size:11px; font-weight:700; }
+    .badge-pdf { background:#d1fae5; color:#059669; padding:2px 8px; border-radius:8px; font-size:11px; font-weight:700; }
+
+    /* ── PI bar chart ──────────────────── */
+    .pi-row {
+      display: flex; align-items: center; gap: 10px; padding: 8px 0;
+      border-bottom: 1px solid #f5f5f5;
+    }
+    .pi-row:last-child { border-bottom: none; }
+    .pi-name { width: 160px; font-size: 16px; font-weight: 600; color: var(--ink); flex-shrink: 0; }
+    .pi-bar { flex: 1; height: 16px; background: var(--surface); border-radius: 8px; overflow: hidden; display: flex; }
+    .pi-bar-msc { background: #1d4ed8; height: 100%; }
+    .pi-bar-phd { background: #7c3aed; height: 100%; }
+    .pi-nums { font-size: 16px; width: 70px; text-align: right; flex-shrink: 0; color: var(--muted); }
+
+    /* ── Scrollable table ─────────────── */
+    .scroll-table {
+      max-height: 400px;
+      overflow-y: auto;
+      scrollbar-width: thin;
+    }
+    .scroll-table::-webkit-scrollbar { width: 6px; }
+    .scroll-table::-webkit-scrollbar-thumb { background: #ddd; border-radius: 3px; }
+
+    /* ── Empty state ──────────────────── */
+    .empty-box {
+      text-align: center; padding: 60px 20px; color: var(--light);
+    }
+    .empty-box i { font-size: 44px; display: block; margin-bottom: 10px; }
+    .empty-box p { font-size: 16px; margin: 0; }
+
+    /* ── Responsive ───────────────────── */
+    @media (max-width: 768px) {
+      .report-shell { padding: 0 12px; }
+      .kpi-row { grid-template-columns: repeat(2, 1fr); }
+      .degree-grid { grid-template-columns: 1fr; }
+      .pi-name { width: 100px; }
+    }
+  </style>
+</head>
+<body>
+<div class="dashboard-layout">
+  {% include "../sidebar.html" %}
+  <div class="dashboard-main">
+    <div class="report-shell">
+
+      <!-- Header -->
+      <div class="report-top">
+        <div>
+          <h1><i class="bi bi-mortarboard"></i> Graduate Completion Report</h1>
+          <div class="subtitle">Degree completion times · {{ cutoff_year }}–{{ current_year }} · UNB students only</div>
+        </div>
+        <a href="?{% if filter_degree %}degree={{ filter_degree }}&{% endif %}{% if filter_pi %}pi={{ filter_pi }}&{% endif %}{% if filter_dept %}department={{ filter_dept }}&{% endif %}export=csv" class="btn-export">
+          <i class="bi bi-download"></i> Export CSV
+        </a>
+      </div>
+
+      <!-- Filters -->
+      <form method="get" class="filter-row">
+        <select name="degree">
+          <option value="">All Degrees</option>
+          {% for val, label in degree_choices %}
+          <option value="{{ val }}" {% if filter_degree == val %}selected{% endif %}>{{ label }}</option>
+          {% endfor %}
+        </select>
+        <select name="pi">
+          <option value="">All PIs</option>
+          {% for sup in all_supervisors %}
+          <option value="{{ sup.id }}" {% if filter_pi == sup.id|stringformat:"s" %}selected{% endif %}>{{ sup.get_full_name }}</option>
+          {% endfor %}
+        </select>
+        {% if all_departments %}
+        <select name="department">
+          <option value="">All Departments</option>
+          {% for dept in all_departments %}
+          <option value="{{ dept }}" {% if filter_dept == dept %}selected{% endif %}>{{ dept }}</option>
+          {% endfor %}
+        </select>
+        {% endif %}
+        <button type="submit" class="btn-apply"><i class="bi bi-funnel"></i> Filter</button>
+        <a href="{% url 'grad_completion_report' %}" class="btn-reset">Clear</a>
+      </form>
+
+      {% if total_students == 0 %}
+      <div class="empty-box">
+        <i class="bi bi-mortarboard"></i>
+        <p>No graduation data found for the selected filters.</p>
+      </div>
+      {% else %}
+
+      <!-- KPIs -->
+      <div class="kpi-row">
+        <div class="kpi">
+          <div class="kpi-val">{{ total_students }}</div>
+          <div class="kpi-lbl">Graduates</div>
+        </div>
+        <div class="kpi blue">
+          <div class="kpi-val">{{ average_time }}</div>
+          <div class="kpi-lbl">Avg Years</div>
+        </div>
+        {% for degree, stats in by_degree.items %}
+        <div class="kpi {% if 'MSc' in degree %}blue{% elif 'PhD' in degree %}purple{% else %}green{% endif %}">
+          <div class="kpi-val">{{ stats.average }}</div>
+          <div class="kpi-lbl">Avg {{ degree }}</div>
+        </div>
+        {% endfor %}
+      </div>
+
+      <!-- Section 1: Chart -->
+      <div class="report-section">
+        <div class="section-header" onclick="this.parentElement.classList.toggle('collapsed')">
+          <h2><i class="bi bi-graph-up"></i> Active Students Per Year</h2>
+          <i class="bi bi-chevron-down section-chevron"></i>
+        </div>
+        <div class="section-body">
+          <div class="chart-box" id="activeChart"></div>
+        </div>
+      </div>
+
+      <!-- Section 2: By Degree -->
+      <div class="report-section">
+        <div class="section-header" onclick="this.parentElement.classList.toggle('collapsed')">
+          <h2><i class="bi bi-bar-chart-steps"></i> Completion by Degree</h2>
+          <i class="bi bi-chevron-down section-chevron"></i>
+        </div>
+        <div class="section-body">
+          <div class="degree-grid">
+            {% for degree, stats in by_degree.items %}
+            <div class="degree-card">
+              <h4>{{ degree }}</h4>
+              <div class="degree-row"><span>Students</span><span>{{ stats.count }}</span></div>
+              <div class="degree-row"><span>Average</span><span>{{ stats.average }} yrs</span></div>
+              <div class="degree-row"><span>Fastest</span><span>{{ stats.min }} yrs</span></div>
+              <div class="degree-row"><span>Longest</span><span>{{ stats.max }} yrs</span></div>
+            </div>
+            {% endfor %}
+          </div>
+        </div>
+      </div>
+
+      <!-- Section 3: By Supervisor -->
+      <div class="report-section">
+        <div class="section-header" onclick="this.parentElement.classList.toggle('collapsed')">
+          <h2><i class="bi bi-people"></i> By Supervisor</h2>
+          <i class="bi bi-chevron-down section-chevron"></i>
+        </div>
+        <div class="section-body">
+          {% with max_total=by_pi.0.count %}
+          {% for row in by_pi %}
+          <div class="pi-row">
+            <div class="pi-name">{{ row.pi }}</div>
+            <div class="pi-bar">
+              {% if max_total > 0 %}
+              <div class="pi-bar-msc" style="width:{% widthratio row.count max_total 100 %}%;"></div>
+              {% endif %}
+            </div>
+            <div class="pi-nums">{{ row.count }} · {{ row.average }}y</div>
+          </div>
+          {% endfor %}
+          {% endwith %}
+        </div>
+      </div>
+
+      <!-- Section 4: Graduates by Year -->
+      <div class="report-section collapsed">
+        <div class="section-header" onclick="this.parentElement.classList.toggle('collapsed')">
+          <h2><i class="bi bi-calendar3"></i> Graduates by Year</h2>
+          <i class="bi bi-chevron-down section-chevron"></i>
+        </div>
+        <div class="section-body">
+          <div class="scroll-table">
+            <table class="tbl">
+              <thead>
+                <tr><th>Year</th><th>Graduates</th><th>Avg Time</th><th>Students</th></tr>
+              </thead>
+              <tbody>
+                {% for year, data in by_year.items %}
+                <tr>
+                  <td><strong>{{ year }}</strong></td>
+                  <td>{{ data.count }}</td>
+                  <td>{{ data.average }} yrs</td>
+                  <td style="font-size:16px;color:var(--muted);">
+                    {% for s in data.students %}{{ s }}{% if not forloop.last %}, {% endif %}{% endfor %}
+                  </td>
+                </tr>
+                {% endfor %}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+      <!-- Section 5: Individual Records -->
+      <div class="report-section collapsed">
+        <div class="section-header" onclick="this.parentElement.classList.toggle('collapsed')">
+          <h2><i class="bi bi-person-lines-fill"></i> Individual Records ({{ total_students }})</h2>
+          <i class="bi bi-chevron-down section-chevron"></i>
+        </div>
+        <div class="section-body">
+          <div class="scroll-table">
+            <table class="tbl">
+              <thead>
+                <tr><th>Student</th><th>Degree</th><th>Supervisor</th><th>Start</th><th>Graduated</th><th>Duration</th></tr>
+              </thead>
+              <tbody>
+                {% for r in records %}
+                <tr>
+                  <td><strong>{{ r.name }}</strong></td>
+                  <td>
+                    {% if r.degree_level == 'msc' %}<span class="badge-msc">MSc</span>
+                    {% elif r.degree_level == 'phd' %}<span class="badge-phd">PhD</span>
+                    {% else %}<span class="badge-pdf">{{ r.degree }}</span>{% endif %}
+                  </td>
+                  <td>{{ r.pi }}</td>
+                  <td>{{ r.start_date }}</td>
+                  <td>{{ r.graduation_date }}</td>
+                  <td><strong>{{ r.years }} yrs</strong></td>
+                </tr>
+                {% endfor %}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+      {% endif %}
+    </div>
+  </div>
+</div>
+
+<script src="{% static 'js/dashboard.js' %}"></script>
+{% if total_students > 0 %}
+<script>
+  const yearlyData = {{ yearly_counts|safe }};
+  const chart = echarts.init(document.getElementById('activeChart'));
+  chart.setOption({
+    tooltip: { trigger: 'axis', backgroundColor: '#fff', borderColor: '#e5e7eb', textStyle: { color: '#1a1a2e', fontSize: 13 } },
+    legend: { data: ['MSc', 'PhD'], bottom: 0, textStyle: { fontSize: 12 } },
+    grid: { left: 40, right: 20, top: 16, bottom: 40 },
+    xAxis: { type: 'category', data: yearlyData.map(d => d.year), axisLabel: { fontSize: 11 }, axisLine: { lineStyle: { color: '#e5e7eb' } } },
+    yAxis: { type: 'value', minInterval: 1, axisLabel: { fontSize: 11 }, splitLine: { lineStyle: { color: '#f3f4f6' } } },
+    series: [
+      { name: 'MSc', type: 'bar', stack: 'total', data: yearlyData.map(d => d.msc),
+        itemStyle: { color: '#1d4ed8', borderRadius: [0, 0, 0, 0] }, barWidth: '50%' },
+      { name: 'PhD', type: 'bar', stack: 'total', data: yearlyData.map(d => d.phd),
+        itemStyle: { color: '#7c3aed', borderRadius: [4, 4, 0, 0] }, barWidth: '50%' },
+    ],
+  });
+  window.addEventListener('resize', () => chart.resize());
+</script>
+{% endif %}
+</body>
+</html>

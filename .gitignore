@@ -14,7 +14,7 @@ backend/db.sqlite3
 .env
 
 # Uploaded / generated files
-reports/
+backend/reports/
 *.pdf
 
 # OS junk

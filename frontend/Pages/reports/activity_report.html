@@ -1,0 +1,920 @@
+{% load static %}
+{% load humanize %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Activity Report</title>
+  <link rel="icon" href="{% static 'assets/IBE-logo.png' %}">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css">
+  <link rel="stylesheet" href="{% static 'css/dashboard.css' %}">
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --red: #C8102E; --red-dark: #9e0c24; --red-pale: #fff5f6;
+      --ink: #1a1a2e; --muted: #6b7280; --light: #9ca3af;
+      --border: #e5e7eb; --surface: #f9fafb; --white: #ffffff;
+      --tbl-head-size: 15px;
+      --tbl-body-size: 17px;
+      --tbl-meta-size: 15px;
+    }
+
+    .report-shell { font-family: 'DM Sans', sans-serif; width: 1500px; max-width: 1700px; margin: 0 auto; }
+
+    /* ── Header ─────────────────────────── */
+    .report-top {
+      display: flex; justify-content: space-between; align-items: center;
+      padding-bottom: 20px; margin-bottom: 24px;
+      border-bottom: 1px solid var(--border); flex-wrap: wrap; gap: 12px;
+    }
+    .report-top h1 {
+      font-size: 24px; font-weight: 700; color: var(--ink); margin: 0;
+      display: flex; align-items: center; gap: 10px;
+    }
+    .report-top h1 i { color: var(--red); font-size: 22px; }
+    .report-top .subtitle { font-size: 16px; color: var(--muted); margin-top: 4px; }
+    .btn-export {
+      display: inline-flex; align-items: center; gap: 6px;
+      background: var(--white); color: var(--red); border: 1.5px solid var(--red);
+      border-radius: 8px; padding: 8px 16px; font-size: 16px; font-weight: 600;
+      text-decoration: none; transition: background 0.2s;
+    }
+    .btn-export:hover { background: var(--red-pale); }
+
+    /* ── Filter bar ────────────────────── */
+    .filter-row {
+      display: flex; gap: 10px; flex-wrap: wrap; align-items: flex-end;
+      margin-bottom: 24px;
+    }
+    .filter-row select {
+      border: 1px solid var(--border); border-radius: 8px; padding: 8px 12px;
+      font-size: 16px; color: var(--ink); background: var(--white);
+      min-width: 140px; outline: none; font-family: inherit;
+    }
+    .filter-row select:focus { border-color: var(--red); }
+    .filter-row .btn-apply {
+      background: var(--red); color: #fff; border: none; border-radius: 8px;
+      padding: 8px 16px; font-size: 16px; font-weight: 600; cursor: pointer;
+    }
+    .filter-row .btn-apply:hover { background: var(--red-dark); }
+
+    /* ── KPI cards ──────────────────────── */
+    .kpi-row {
+      display: grid; grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+      gap: 12px; margin-bottom: 24px;
+    }
+    .kpi {
+      background: var(--white); border: 1px solid var(--border); border-radius: 10px;
+      padding: 14px 16px; text-align: center;
+    }
+    .kpi-val { font-size: 24px; font-weight: 700; color: var(--red); line-height: 1.1; }
+    .kpi-lbl { font-size: 16px; font-weight: 600; color: var(--muted); text-transform: uppercase; letter-spacing: 0.5px; margin-top: 6px; }
+    .kpi.blue .kpi-val { color: #1d4ed8; }
+    .kpi.green .kpi-val { color: #059669; }
+    .kpi.amber .kpi-val { color: #d97706; }
+    .kpi.purple .kpi-val { color: #7c3aed; }
+
+    /* ── Tabs ───────────────────────────── */
+    .tab-row { display: flex; gap: 5px; margin-bottom: 20px; }
+    .tab-btn {
+      padding: 10px 20px; border: 1px solid var(--border); background: var(--surface);
+      font-size: 16px; font-weight: 600; color: var(--muted); cursor: pointer;
+      border-radius: 8px; font-family: inherit; transition: all 0.15s;
+      display: flex; align-items: center; gap: 8px;
+    }
+    .tab-btn:hover { color: var(--red); border-color: var(--red); }
+    .tab-btn.active { background: var(--red); color: #fff; border-color: var(--red); }
+    .tab-count {
+      background: rgba(255,255,255,0.2); border-radius: 10px;
+      padding: 1px 8px; font-size: 15px; font-weight: 700;
+    }
+    .tab-btn:not(.active) .tab-count { background: #f3f4f6; color: var(--muted); }
+    .tab-panel { display: none; }
+    .tab-panel.active { display: block; }
+
+    /* ── Collapsible sections ──────────── */
+    .report-section {
+      margin-bottom: 20px; background: var(--white);
+      border: 1px solid var(--border); border-radius: 12px; overflow: hidden;
+    }
+    .section-header {
+      display: flex; justify-content: space-between; align-items: center;
+      padding: 16px 20px; cursor: pointer; user-select: none;
+      transition: background 0.15s;
+    }
+    .section-header:hover { background: var(--surface); }
+    .section-header h2 {
+      font-size: 15px; font-weight: 700; color: var(--red); margin: 0;
+      text-transform: uppercase; letter-spacing: 0.5px;
+      display: flex; align-items: center; gap: 8px;
+    }
+    .section-header h2 i { font-size: 16px; }
+    .section-chevron { font-size: 14px; color: var(--light); transition: transform 0.2s; }
+    .report-section.collapsed .section-body { display: none; }
+    .report-section.collapsed .section-chevron { transform: rotate(-90deg); }
+    .section-body { padding: 0 20px 20px; }
+
+    /* ── Tables ─────────────────────────── */
+    .tbl { width: 100%; border-collapse: collapse; }
+    .tbl thead { background: var(--surface); }
+    .tbl th {
+      padding: 10px 14px; text-align: left; font-size: var(--tbl-head-size); font-weight: 700;
+      color: var(--muted); text-transform: uppercase; letter-spacing: 0.4px;
+      border-bottom: 1px solid var(--border);
+    }
+    .tbl td {
+      padding: 10px 14px; font-size: var(--tbl-body-size); color: var(--ink);
+      border-bottom: 1px solid #f3f4f6; vertical-align: middle;
+    }
+    .tbl tbody tr:last-child td { border-bottom: none; }
+    .tbl tbody tr:hover td { background: #fefefe; }
+
+    .scroll-table { max-height: 600px; overflow-y: auto; scrollbar-width: thin; }
+    .scroll-table::-webkit-scrollbar { width: 6px; }
+    .scroll-table::-webkit-scrollbar-thumb { background: #ddd; border-radius: 3px; }
+
+    /* ── Badges ─────────────────────────── */
+    .cat-badge {
+      display: inline-block; padding: 3px 8px; border-radius: 6px;
+      font-size: 14px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.3px;
+    }
+    .cat-conference             { background: #dbeafe; color: #1d4ed8; }
+    .cat-knowledge_mobilization { background: #dcfce7; color: #166534; }
+    .cat-media                  { background: #fef3c7; color: #92400e; }
+    .cat-academic               { background: #ede9fe; color: #5b21b6; }
+    .cat-other                  { background: #f3f4f6; color: #6b7280; }
+    .role-badge {
+      display: inline-block; padding: 2px 7px; border-radius: 8px;
+      font-size: 15px; font-weight: 700;
+    }
+    .role-student    { background: #fce7f3; color: #9d174d; }
+    .role-researcher { background: #e0f2fe; color: #0369a1; }
+    .status-badge {
+      display: inline-block; padding: 3px 8px; border-radius: 6px;
+      font-size: 15px; font-weight: 700;
+    }
+    .st-awarded   { background: #dcfce7; color: #166534; }
+    .st-submitted { background: #fef3c7; color: #92400e; }
+    .st-rejected  { background: #fee2e2; color: #991b1b; }
+    .amt { color: var(--red); font-weight: 700; }
+
+    /* ── Pagination ─────────────────────── */
+    .pager {
+      display: flex; justify-content: space-between; align-items: center;
+      padding: 14px 0; font-size: 15px; color: var(--muted);
+    }
+    .pager-btns { display: flex; gap: 4px; }
+    .pg-btn {
+      border: 1px solid var(--border); background: var(--white); border-radius: 6px;
+      padding: 5px 11px; cursor: pointer; font-size: 16px; text-decoration: none;
+      color: var(--ink); font-family: inherit; transition: all 0.15s;
+    }
+    .pg-btn:hover { border-color: var(--red); color: var(--red); }
+    .pg-btn.active { background: var(--red); color: #fff; border-color: var(--red); }
+    .pg-btn:disabled, .pg-btn.disabled { background: var(--surface); color: #ccc; cursor: not-allowed; border-color: var(--border); }
+
+    /* ── Empty ──────────────────────────── */
+    .empty-box { text-align: center; padding: 50px 20px; color: var(--light); }
+    .empty-box i { font-size: 40px; display: block; margin-bottom: 10px; }
+    .empty-box p { font-size: 14px; margin: 0; }
+
+    @media (max-width: 768px) {
+      .report-shell { padding: 0 12px; }
+      .kpi-row { grid-template-columns: repeat(2, 1fr); }
+      .tab-row { flex-wrap: wrap; }
+    }
+
+    .project-summary-row {
+      cursor: pointer;
+      transition: background 0.15s;
+    }
+    .project-summary-row:hover td {
+      background: #fef9f9 !important;
+    }
+    .project-summary-row td:first-child {
+      width: 50%;
+      border-left: 3px solid transparent;
+      transition: border-color 0.15s;
+    }
+
+    /* ── Detail row ── */
+    .detail-expanded-row td {
+      background: var(--surface) !important;
+      border-left: 3px solid var(--red);
+      border-bottom: 2px solid var(--border);
+    }
+
+    /* ── Detail grid inside expanded row ── */
+    .detail-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 16px;
+    }
+    .detail-grid-full {
+      grid-column: 1 / -1;
+    }
+    .detail-grid-label {
+      font-size: 10px;
+      font-weight: 700;
+      color: var(--muted);
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      margin-bottom: 4px;
+    }
+    .detail-grid-value {
+      font-size: var(--tbl-body-size);
+      color: var(--ink);
+      line-height: 1.5;
+    }
+
+    
+  </style>
+</head>
+<body>
+<div class="dashboard-layout">
+  {% include "../sidebar.html" %}
+  <div class="dashboard-main">
+    <div class="report-shell">
+
+      <!-- Header -->
+      <div class="report-top">
+        <div>
+          <h1><i class="bi bi-clipboard-data"></i> Director Report</h1>
+          <div class="subtitle">Academic Year {{ year_label }}</div>
+        </div>
+        <a href="?{{ export_params }}&export=csv" class="btn-export">
+          <i class="bi bi-download"></i> Export CSV
+        </a>
+      </div>
+
+      <!-- Year filter -->
+      <form method="GET" class="filter-row">
+        <input type="hidden" name="tab" value="{{ active_tab }}">
+        <select name="year">
+          {% for y in year_options %}
+          <option value="{{ y.value }}" {% if y.value == selected_year %}selected{% endif %}>{{ y.label }}</option>
+          {% endfor %}
+        </select>
+        <button type="submit" class="btn-apply"><i class="bi bi-funnel"></i> Apply</button>
+      </form>
+
+      <!-- Tabs -->
+      <div class="tab-row">
+        <button class="tab-btn {% if active_tab == 'activities' %}active{% endif %}"
+                onclick="switchReportTab('activities')">
+          <i class="bi bi-calendar-event"></i> Activities
+          <span class="tab-count">{{ total_count }}</span>
+        </button>
+        <button class="tab-btn {% if active_tab == 'publications' %}active{% endif %}"
+                onclick="switchReportTab('publications')">
+          <i class="bi bi-journal-text"></i> Publications
+          <span class="tab-count">{{ pub_count }}</span>
+        </button>
+        <button class="tab-btn {% if active_tab == 'grants' %}active{% endif %}"
+                onclick="switchReportTab('grants')">
+          <i class="bi bi-cash-coin"></i> Grants
+          <span class="tab-count">{{ grant_count }}</span>
+        </button>
+      </div>
+
+      <!-- ═══ TAB 1: ACTIVITIES ═══ -->
+      <div id="panel-activities" class="tab-panel {% if active_tab == 'activities' %}active{% endif %}">
+
+        <!-- Activity filters -->
+        <form method="GET" class="filter-row">
+          <input type="hidden" name="year" value="{{ selected_year }}">
+          <input type="hidden" name="tab" value="activities">
+          <select name="category">
+            <option value="">All Types</option>
+            <option value="conference"             {% if selected_category == 'conference'             %}selected{% endif %}>Conference</option>
+            <option value="knowledge_mobilization" {% if selected_category == 'knowledge_mobilization' %}selected{% endif %}>Knowledge Mobilization</option>
+            <option value="media"                  {% if selected_category == 'media'                  %}selected{% endif %}>Media</option>
+            <option value="academic"               {% if selected_category == 'academic'               %}selected{% endif %}>Academic</option>
+            <option value="other"                  {% if selected_category == 'other'                  %}selected{% endif %}>Other</option>
+          </select>
+          <select name="user_type">
+            <option value="">Everyone</option>
+            <option value="researcher" {% if selected_user_type == 'researcher' %}selected{% endif %}>Researchers</option>
+            <option value="student"    {% if selected_user_type == 'student'    %}selected{% endif %}>Students</option>
+          </select>
+          <button type="submit" class="btn-apply"><i class="bi bi-funnel"></i> Filter</button>
+        </form>
+
+        <!-- KPIs -->
+        <div class="kpi-row">
+          <div class="kpi"><div class="kpi-val">{{ total_count }}</div><div class="kpi-lbl">Total</div></div>
+          <div class="kpi blue"><div class="kpi-val">{{ conference_count }}</div><div class="kpi-lbl">Conference</div></div>
+          <div class="kpi green"><div class="kpi-val">{{ km_count }}</div><div class="kpi-lbl">KM</div></div>
+          <div class="kpi amber"><div class="kpi-val">{{ media_count }}</div><div class="kpi-lbl">Media</div></div>
+          <div class="kpi purple"><div class="kpi-val">{{ researcher_count }}</div><div class="kpi-lbl">Researchers</div></div>
+          <div class="kpi"><div class="kpi-val">{{ student_count }}</div><div class="kpi-lbl">Students</div></div>
+          {% for obj in objective_counts %}
+          <div class="kpi">
+            <div class="kpi-val">{{ obj.count }}</div>
+            <div class="kpi-lbl">{{ obj.name }}</div>
+          </div>
+          {% endfor %}
+        </div>
+
+        <!-- View toggle -->
+        <div style="display:flex;justify-content:flex-end;gap:8px;margin-bottom:16px;">
+          <a href="?year={{ selected_year }}&tab=activities&category={{ selected_category }}&user_type={{ selected_user_type }}&group=0"
+            class="pg-btn {% if not group_by_conf %}active{% endif %}">
+            <i class="bi bi-list-ul"></i> Individual
+          </a>
+          <a href="?year={{ selected_year }}&tab=activities&category={{ selected_category }}&user_type={{ selected_user_type }}&group=1"
+            class="pg-btn {% if group_by_conf %}active{% endif %}">
+            <i class="bi bi-collection"></i> By Conference
+          </a>
+        </div>
+
+        <!-- Table -->
+        <div class="report-section">
+          <div class="section-header" onclick="this.parentElement.classList.toggle('collapsed')">
+            <h2><i class="bi bi-table"></i> Activity Records</h2>
+            <i class="bi bi-chevron-down section-chevron"></i>
+          </div>
+          <div class="section-body">
+
+            {% if group_by_conf %}
+            <!-- ── GROUPED BY CONFERENCE ── -->
+            {% if grouped_conferences %}
+            <div class="scroll-table">
+              <table class="tbl">
+                <thead>
+                  <tr>
+                    <th>Conference</th>
+                    <th>Total Students</th>
+                    <th>MSc</th>
+                    <th>PhD</th>
+                    <th>Researchers</th>
+                    <th>Date</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {% for conf in grouped_conferences %}
+                  <tr class="project-summary-row" onclick="toggleConfRow('conf-{{ forloop.counter }}')">
+                    <td>
+                      <div style="display:flex;align-items:center;gap:8px;">
+                        <i class="bi bi-chevron-right" id="conf-chevron-{{ forloop.counter }}"
+                          style="font-size:11px;color:var(--muted);transition:transform 0.2s;flex-shrink:0; margin-right: 10px;"></i>
+                        <div>
+                          <strong>{{ conf.name }}</strong>
+                          {% if conf.year %}<span style="color:var(--muted);font-size:12px;margin-left:6px;">{{ conf.year }}</span>{% endif %}
+                          {% if conf.location %}
+                          <div style="font-size:12px;color:var(--muted);margin-top:2px;">
+                            <i class="bi bi-geo-alt"></i> {{ conf.location }}
+                          </div>
+                          {% endif %}
+                        </div>
+                      </div>
+                    </td>
+                    <td><span style="font-size:18px;font-weight:700;color:var(--red);">{{ conf.student_count }}</span></td>
+                    <td><span class="role-badge role-student">{{ conf.msc_count }}</span></td>
+                    <td><span class="role-badge" style="background:#ede9fe;color:#5b21b6;">{{ conf.phd_count }}</span></td>
+                    <td><span class="role-badge role-researcher">{{ conf.researcher_count }}</span></td>
+                    <td style="white-space:nowrap;font-size:13px;">{{ conf.earliest_date|date:"M d, Y"|default:"—" }}</td>
+                  </tr>
+
+                  {% if conf.attendees %}
+                  <tr id="conf-{{ forloop.counter }}" style="display:none;">
+                    <td colspan="6" style="background:var(--surface);padding:12px 20px;">
+                      <div style="font-size:12px;color:var(--muted);margin-bottom:8px;font-weight:600;">
+                        ATTENDEES
+                      </div>
+                      <div style="display:flex;flex-wrap:wrap;gap:8px;">
+                        {% for a in conf.attendees %}
+                        <span style="
+                          display:inline-flex;align-items:center;gap:5px;
+                          padding:4px 10px;border-radius:20px;font-size:14px;font-weight:600;
+                          background:{% if a.user_type == 'student' %}#fce7f3{% else %}#e0f2fe{% endif %};
+                          color:{% if a.user_type == 'student' %}#9d174d{% else %}#0369a1{% endif %};
+                        ">
+                          <i class="bi bi-person-fill"></i>
+                          {{ a.name }}
+                          {% if a.invited %}<span style="opacity:0.7;">· Invited</span>{% endif %}
+                          {% if a.keynote %}<span style="opacity:0.7;">· Keynote</span>{% endif %}
+                        </span>
+                        {% endfor %}
+                      </div>
+                      {% if conf.conference %}
+                      <div style="margin-top:12px;">
+                        <a href="{% url 'conference_equity_report' %}?conference_id={{ conf.conference.id }}"
+                          style="font-size:12px;color:var(--red);font-weight:600;text-decoration:none;">
+                          <i class="bi bi-shield-check"></i> View Equity Report →
+                        </a>
+                      </div>
+                      {% endif %}
+                    </td>
+                  </tr>
+                  {% endif %}
+
+                  {% endfor %}
+                </tbody>
+              </table>
+            </div>
+            {% else %}
+            <div class="empty-box">
+              <i class="bi bi-building"></i>
+              <p>No conference activities found for the selected period.</p>
+            </div>
+            {% endif %}
+
+            {% else %}
+            <!-- ── INDIVIDUAL ROWS ── -->
+            {% if activities %}
+            <div class="scroll-table">
+              <table class="tbl">
+                <thead>
+                  <tr><th>Title</th><th>Category</th><th>Person</th><th>Date</th></tr>
+                </thead>
+                <tbody>
+                  {% for a in activities %}
+                  <!-- Summary row -->
+                  <tr class="project-summary-row" onclick="toggleActDirRow('adir-{{ forloop.counter }}')">
+                    <td>
+                      <div style="display:flex;align-items:center;gap:8px;">
+                        <i class="bi bi-chevron-right" id="adir-chevron-{{ forloop.counter }}"
+                          style="font-size:11px;color:var(--muted);transition:transform 0.2s;flex-shrink:0; margin-right: 10px;"></i>
+                        <div>
+                          <strong>{{ a.title }}</strong>
+                          {% if a.conference %}
+                          <div style="font-size:var(--tbl-meta-size);color:var(--muted);margin-top:2px;">
+                            <i class="bi bi-building"></i> {{ a.conference.name }}
+                            {% if a.conference.location %}<span style="color:var(--light);">· {{ a.conference.location }}</span>{% endif %}
+                          </div>
+                          {% endif %}
+                        </div>
+                      </div>
+                    </td>
+                    <td><span class="cat-badge cat-{{ a.category }}">{{ a.get_category_display }}</span></td>
+                    <td>
+                      {{ a.researcher.user.get_full_name }}
+                      <div style="margin-top:3px;">
+                        <span class="role-badge role-{{ a.researcher.user.user_type }}">{{ a.researcher.user.user_type|title }}</span>
+                      </div>
+                    </td>
+                    <td style="white-space:nowrap;">{{ a.date|date:"M d, Y" }}</td>
+                  </tr>
+
+                  <!-- Detail row -->
+                  <tr id="adir-{{ forloop.counter }}" class="detail-expanded-row" style="display:none;">
+                    <td colspan="4" style="padding:16px 20px;">
+                      <div class="detail-grid">
+
+                        {% if a.description %}
+                        <div class="detail-grid-full">
+                          <div class="detail-grid-label">Description</div>
+                          <div class="detail-grid-value">{{ a.description }}</div>
+                        </div>
+                        {% endif %}
+
+                        {% if a.location %}
+                        <div>
+                          <div class="detail-grid-label">Location</div>
+                          <div class="detail-grid-value">{{ a.location }}</div>
+                        </div>
+                        {% endif %}
+
+                        {% if a.co_presenters %}
+                        <div>
+                          <div class="detail-grid-label">Co-Presenters</div>
+                          <div class="detail-grid-value">{{ a.co_presenters }}</div>
+                        </div>
+                        {% endif %}
+
+                        {% if a.invited or a.keynote %}
+                        <div>
+                          <div class="detail-grid-label">Flags</div>
+                          <div class="detail-grid-value">
+                            {% if a.invited %}<span style="color:#059669;font-weight:600;">Invited</span>{% endif %}
+                            {% if a.invited and a.keynote %}<span style="color:var(--muted);margin:0 4px;">·</span>{% endif %}
+                            {% if a.keynote %}<span style="color:#7c3aed;font-weight:600;">Keynote</span>{% endif %}
+                          </div>
+                        </div>
+                        {% endif %}
+
+                        {% with tagged=a.tagged_users.all %}
+                        {% if tagged %}
+                        <div class="detail-grid-full">
+                          <div class="detail-grid-label">Tagged Students</div>
+                          <div style="display:flex;flex-wrap:wrap;gap:6px;margin-top:4px;">
+                            {% for u in tagged %}
+                            <span style="background:#fce7f3;color:#9d174d;padding:3px 10px;border-radius:12px;font-size:12px;font-weight:600;">
+                              <i class="bi bi-person-fill"></i> {{ u.get_full_name }}
+                            </span>
+                            {% endfor %}
+                          </div>
+                        </div>
+                        {% endif %}
+                        {% endwith %}
+
+                        {% with objs=a.objectives.all %}
+                        {% if objs %}
+                        <div class="detail-grid-full">
+                          <div class="detail-grid-label">Strategic Objectives</div>
+                          <div style="display:flex;flex-wrap:wrap;gap:6px;margin-top:4px;">
+                            {% for obj in objs %}
+                            <span style="background:#fff0f2;color:#C8102E;border:1px solid #fecdd3;
+                                        border-radius:20px;padding:3px 10px;font-size:12px;font-weight:600;">
+                              {{ obj.name }}
+                            </span>
+                            {% endfor %}
+                          </div>
+                        </div>
+                        {% endif %}
+                        {% endwith %}
+
+                      </div>
+                    </td>
+                  </tr>
+                  {% endfor %}
+                </tbody>
+              </table>
+            </div>
+            <!-- Pagination -->
+            <div class="pager">
+              <span>Showing {{ page_start }}–{{ page_end }} of {{ total_count }}</span>
+              <div class="pager-btns">
+                {% if activities.has_previous %}
+                <a href="?year={{ selected_year }}&tab=activities&category={{ selected_category }}&user_type={{ selected_user_type }}&page={{ activities.previous_page_number }}" class="pg-btn"><i class="bi bi-chevron-left"></i></a>
+                {% endif %}
+                {% for num in activities.paginator.page_range %}
+                  {% if num == activities.number %}
+                  <span class="pg-btn active">{{ num }}</span>
+                  {% elif num >= activities.number|add:"-2" and num <= activities.number|add:"2" %}
+                  <a href="?year={{ selected_year }}&tab=activities&category={{ selected_category }}&user_type={{ selected_user_type }}&page={{ num }}" class="pg-btn">{{ num }}</a>
+                  {% endif %}
+                {% endfor %}
+                {% if activities.has_next %}
+                <a href="?year={{ selected_year }}&tab=activities&category={{ selected_category }}&user_type={{ selected_user_type }}&page={{ activities.next_page_number }}" class="pg-btn"><i class="bi bi-chevron-right"></i></a>
+                {% endif %}
+              </div>
+            </div>
+            {% else %}
+            <div class="empty-box"><i class="bi bi-calendar-x"></i><p>No activities found for the selected filters.</p></div>
+            {% endif %}
+
+            {% endif %}
+          </div>
+        </div>
+      </div>
+
+      <!-- ═══ TAB 2: PUBLICATIONS ═══ -->
+      <div id="panel-publications" class="tab-panel {% if active_tab == 'publications' %}active{% endif %}">
+
+        <!-- Pub filters -->
+        <form method="GET" class="filter-row">
+          <input type="hidden" name="year" value="{{ selected_year }}">
+          <input type="hidden" name="tab" value="publications">
+          <select name="pub_type">
+            <option value="">All Types</option>
+            <option value="journal"    {% if selected_pub_type == 'journal'    %}selected{% endif %}>Journal Article</option>
+            <option value="conference" {% if selected_pub_type == 'conference' %}selected{% endif %}>Conference Paper</option>
+            <option value="chapter"    {% if selected_pub_type == 'chapter'    %}selected{% endif %}>Book Chapter</option>
+            <option value="patent"     {% if selected_pub_type == 'patent'     %}selected{% endif %}>Patent</option>
+          </select>
+          <button type="submit" class="btn-apply"><i class="bi bi-funnel"></i> Filter</button>
+        </form>
+
+        <div class="kpi-row">
+          <div class="kpi"><div class="kpi-val">{{ pub_count }}</div><div class="kpi-lbl">Publications</div></div>
+        </div>
+
+        <div class="report-section">
+          <div class="section-header" onclick="this.parentElement.classList.toggle('collapsed')">
+            <h2><i class="bi bi-journal-text"></i> Publication Records</h2>
+            <i class="bi bi-chevron-down section-chevron"></i>
+          </div>
+          <div class="section-body">
+            {% if publications %}
+            <div class="scroll-table">
+              <table class="tbl">
+                <thead>
+                  <tr><th>Title</th><th>Type</th><th>Status</th><th>Venue</th><th>Researcher</th><th>Date</th></tr>
+                </thead>
+                <tbody>
+                {% for p in publications %}
+                <!-- Summary row -->
+                <tr class="project-summary-row" onclick="togglePubRow('pub-{{ forloop.counter }}')">
+                  <td>
+                    <div style="display:flex;align-items:center;gap:8px;">
+                      <i class="bi bi-chevron-right" id="pub-chevron-{{ forloop.counter }}"
+                        style="font-size:11px;color:var(--muted);transition:transform 0.2s;flex-shrink:0;margin-right:10px;"></i>
+                      <div>
+                        <strong>{{ p.title|truncatechars:60 }}</strong>
+                        {% if p.authors %}<div style="font-size:13px;color:var(--muted);margin-top:3px;">{{ p.authors|truncatechars:50 }}</div>{% endif %}
+                      </div>
+                    </div>
+                  </td>
+                  <td><span class="cat-badge" style="background:#ede9fe;color:#5b21b6;">{{ p.get_publication_type_display }}</span></td>
+                  <td style="font-size:13px;color:var(--muted);">{{ p.get_status_display|default:"—" }}</td>
+                  <td style="font-size:13px;color:var(--muted);">{{ p.journal|default:"—"|truncatechars:30 }}</td>
+                  <td>{{ p.researcher.user.get_full_name }}</td>
+                  <td style="white-space:nowrap;">{{ p.publication_date|date:"M d, Y" }}</td>
+                </tr>
+
+                <!-- Detail row -->
+                <tr id="pub-{{ forloop.counter }}" class="detail-expanded-row" style="display:none;">
+                  <td colspan="6" style="padding:16px 20px;">
+                    <div class="detail-grid">
+
+                      <!-- Full title + authors always shown first -->
+                      <div class="detail-grid-full">
+                        <div class="detail-grid-label">Full Title</div>
+                        <div class="detail-grid-value" style="font-weight:600;">{{ p.title }}</div>
+                      </div>
+
+                      {% if p.authors %}
+                      <div class="detail-grid-full">
+                        <div class="detail-grid-label">Authors</div>
+                        <div class="detail-grid-value">{{ p.authors }}</div>
+                      </div>
+                      {% endif %}
+
+                      {% if p.abstract %}
+                      <div class="detail-grid-full">
+                        <div class="detail-grid-label">Abstract</div>
+                        <div class="detail-grid-value">{{ p.abstract }}</div>
+                      </div>
+                      {% endif %}
+
+                      {% if p.doi %}
+                      <div>
+                        <div class="detail-grid-label">DOI</div>
+                        <div class="detail-grid-value">
+                          <a href="https://doi.org/{{ p.doi }}" target="_blank" style="color:var(--red);">{{ p.doi }}</a>
+                        </div>
+                      </div>
+                      {% endif %}
+
+                      {% if p.volume or p.issue or p.pages %}
+                      <div>
+                        <div class="detail-grid-label">Volume / Issue / Pages</div>
+                        <div class="detail-grid-value">
+                          {% if p.volume %}Vol. {{ p.volume }}{% endif %}
+                          {% if p.issue %}, No. {{ p.issue }}{% endif %}
+                          {% if p.pages %}, pp. {{ p.pages }}{% endif %}
+                        </div>
+                      </div>
+                      {% endif %}
+
+                      {% if p.conference_location %}
+                      <div>
+                        <div class="detail-grid-label">Location</div>
+                        <div class="detail-grid-value">{{ p.conference_location }}</div>
+                      </div>
+                      {% endif %}
+
+                      <div>
+                        <div class="detail-grid-label">Flags</div>
+                        <div class="detail-grid-value">
+                          {% if p.refereed %}<span style="color:#059669;font-weight:600;">Refereed</span>{% endif %}
+                          {% if p.open_access %}<span style="color:#1d4ed8;font-weight:600;margin-left:8px;">Open Access</span>{% endif %}
+                          {% if p.invited %}<span style="color:#7c3aed;font-weight:600;margin-left:8px;">Invited</span>{% endif %}
+                        </div>
+                      </div>
+
+                    </div>
+                  </td>
+                </tr>
+                {% endfor %}
+              </tbody>
+              </table>
+            </div>
+            <div class="pager">
+              <span>Showing {{ publications.start_index }}–{{ publications.end_index }} of {{ pub_count }}</span>
+              <div class="pager-btns">
+                {% if publications.has_previous %}
+                <a href="?year={{ selected_year }}&tab=publications&pub_type={{ selected_pub_type }}&pub_page={{ publications.previous_page_number }}" class="pg-btn"><i class="bi bi-chevron-left"></i></a>
+                {% endif %}
+                {% for num in publications.paginator.page_range %}
+                  {% if num == publications.number %}
+                  <span class="pg-btn active">{{ num }}</span>
+                  {% elif num >= publications.number|add:"-2" and num <= publications.number|add:"2" %}
+                  <a href="?year={{ selected_year }}&tab=publications&pub_type={{ selected_pub_type }}&pub_page={{ num }}" class="pg-btn">{{ num }}</a>
+                  {% endif %}
+                {% endfor %}
+                {% if publications.has_next %}
+                <a href="?year={{ selected_year }}&tab=publications&pub_type={{ selected_pub_type }}&pub_page={{ publications.next_page_number }}" class="pg-btn"><i class="bi bi-chevron-right"></i></a>
+                {% endif %}
+              </div>
+            </div>
+            {% else %}
+            <div class="empty-box"><i class="bi bi-journal-x"></i><p>No publications found for this period.</p></div>
+            {% endif %}
+          </div>
+        </div>
+      </div>
+
+      <!-- ═══ TAB 3: GRANTS ═══ -->
+      <div id="panel-grants" class="tab-panel {% if active_tab == 'grants' %}active{% endif %}">
+
+        <form method="GET" class="filter-row">
+          <input type="hidden" name="year" value="{{ selected_year }}">
+          <input type="hidden" name="tab" value="grants">
+          <select name="grant_status">
+            <option value="">All Statuses</option>
+            <option value="awarded"   {% if selected_status == 'awarded'   %}selected{% endif %}>Awarded</option>
+            <option value="submitted" {% if selected_status == 'submitted' %}selected{% endif %}>Submitted</option>
+            <option value="rejected"  {% if selected_status == 'rejected'  %}selected{% endif %}>Rejected</option>
+          </select>
+          <button type="submit" class="btn-apply"><i class="bi bi-funnel"></i> Filter</button>
+        </form>
+
+        <div class="kpi-row">
+          <div class="kpi"><div class="kpi-val">{{ grant_count }}</div><div class="kpi-lbl">Total Grants</div></div>
+          <div class="kpi green"><div class="kpi-val">{{ awarded_count }}</div><div class="kpi-lbl">Awarded</div></div>
+          <div class="kpi amber"><div class="kpi-val">{{ submitted_count }}</div><div class="kpi-lbl">Submitted</div></div>
+          <div class="kpi"><div class="kpi-val">{{ rejected_count }}</div><div class="kpi-lbl">Rejected</div></div>
+        </div>
+
+        <div class="report-section">
+          <div class="section-header" onclick="this.parentElement.classList.toggle('collapsed')">
+            <h2><i class="bi bi-cash-coin"></i> Grant Records</h2>
+            <i class="bi bi-chevron-down section-chevron"></i>
+          </div>
+          <div class="section-body">
+            {% if grants %}
+            <div class="scroll-table">
+              <table class="tbl">
+                <thead>
+                  <tr><th>Title</th><th>Organization</th><th>PI</th><th>Funding</th><th>Status</th><th>Start</th></tr>
+                </thead>
+                <tbody>
+                {% for g in grants %}
+                <!-- Summary row -->
+                <tr class="project-summary-row" onclick="toggleGrantRow('grant-{{ forloop.counter }}')">
+                  <td>
+                    <div style="display:flex;align-items:center;gap:8px;">
+                      <i class="bi bi-chevron-right" id="grant-chevron-{{ forloop.counter }}"
+                        style="font-size:11px;color:var(--muted);transition:transform 0.2s;flex-shrink:0;margin-right:10px;"></i>
+                      <div>
+                        <strong>{{ g.title|truncatechars:60 }}</strong>
+                        {% if g.program_name %}
+                        <div style="font-size:13px;color:var(--muted);margin-top:3px;">{{ g.program_name }}</div>
+                        {% endif %}
+                      </div>
+                    </div>
+                  </td>
+                  <td style="font-size:13px;color:var(--muted);">{{ g.funding_organization|default:"—" }}</td>
+                  <td>{{ g.researcher.user.get_full_name }}</td>
+                  <td class="amt">
+                    {% if g.total_funding %}${{ g.total_funding|floatformat:0|intcomma }}{% else %}—{% endif %}
+                    {% if g.funding_received %}
+                    <div style="font-size:13px;color:var(--muted);font-weight:500;">
+                      UNB: ${{ g.funding_received|floatformat:0|intcomma }}
+                    </div>
+                    {% endif %}
+                  </td>
+                  <td>
+                    {% if g.status %}
+                    <span class="status-badge st-{{ g.status }}">{{ g.get_status_display }}</span>
+                    {% else %}—{% endif %}
+                  </td>
+                  <td style="white-space:nowrap;">{{ g.start_date|date:"M d, Y"|default:"—" }}</td>
+                </tr>
+
+                <!-- Detail row -->
+                <tr id="grant-{{ forloop.counter }}" class="detail-expanded-row" style="display:none;">
+                  <td colspan="6" style="padding:16px 20px;">
+                    <div class="detail-grid">
+
+                      <!-- Full title always shown first -->
+                      <div class="detail-grid-full">
+                        <div class="detail-grid-label">Full Title</div>
+                        <div class="detail-grid-value" style="font-weight:600;">{{ g.title }}</div>
+                      </div>
+
+                      {% if g.description %}
+                      <div class="detail-grid-full">
+                        <div class="detail-grid-label">Description</div>
+                        <div class="detail-grid-value">{{ g.description }}</div>
+                      </div>
+                      {% endif %}
+
+                      <div>
+                        <div class="detail-grid-label">Role</div>
+                        <div class="detail-grid-value">{{ g.get_role_display|default:"—" }}</div>
+                      </div>
+
+                      <div>
+                        <div class="detail-grid-label">Funding Type</div>
+                        <div class="detail-grid-value">{{ g.funding_type|default:"—" }}</div>
+                      </div>
+
+                      {% if g.start_date and g.end_date %}
+                      <div>
+                        <div class="detail-grid-label">Timeline</div>
+                        <div class="detail-grid-value">{{ g.start_date }} → {{ g.end_date }}</div>
+                      </div>
+                      {% endif %}
+
+                      {% if g.funding_kept_by_unb %}
+                      <div>
+                        <div class="detail-grid-label">Kept by UNB</div>
+                        <div class="detail-grid-value amt">${{ g.funding_kept_by_unb|floatformat:0|intcomma }}</div>
+                      </div>
+                      {% endif %}
+
+                      {% if g.conception %}
+                      <div class="detail-grid-full">
+                        <div class="detail-grid-label">Conception</div>
+                        <div class="detail-grid-value">{{ g.conception }}</div>
+                      </div>
+                      {% endif %}
+
+                      {% if g.next_steps %}
+                      <div class="detail-grid-full">
+                        <div class="detail-grid-label">Next Steps</div>
+                        <div class="detail-grid-value">{{ g.next_steps }}</div>
+                      </div>
+                      {% endif %}
+
+                    </div>
+                  </td>
+                </tr>
+                {% endfor %}
+              </tbody>
+              </table>
+            </div>
+            <div class="pager">
+              <span>Showing {{ grants.start_index }}–{{ grants.end_index }} of {{ grant_count }}</span>
+              <div class="pager-btns">
+                {% if grants.has_previous %}
+                <a href="?year={{ selected_year }}&tab=grants&grant_status={{ selected_status }}&grant_page={{ grants.previous_page_number }}" class="pg-btn"><i class="bi bi-chevron-left"></i></a>
+                {% endif %}
+                {% for num in grants.paginator.page_range %}
+                  {% if num == grants.number %}
+                  <span class="pg-btn active">{{ num }}</span>
+                  {% elif num >= grants.number|add:"-2" and num <= grants.number|add:"2" %}
+                  <a href="?year={{ selected_year }}&tab=grants&grant_status={{ selected_status }}&grant_page={{ num }}" class="pg-btn">{{ num }}</a>
+                  {% endif %}
+                {% endfor %}
+                {% if grants.has_next %}
+                <a href="?year={{ selected_year }}&tab=grants&grant_status={{ selected_status }}&grant_page={{ grants.next_page_number }}" class="pg-btn"><i class="bi bi-chevron-right"></i></a>
+                {% endif %}
+              </div>
+            </div>
+            {% else %}
+            <div class="empty-box"><i class="bi bi-cash-stack"></i><p>No grants found for this period.</p></div>
+            {% endif %}
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</div>
+
+<script src="{% static 'js/dashboard.js' %}"></script>
+<script>
+  function switchReportTab(tab) {
+    document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+    document.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('active'));
+    document.getElementById(`panel-${tab}`).classList.add('active');
+    document.querySelector(`[onclick="switchReportTab('${tab}')"]`).classList.add('active');
+    const url = new URL(window.location.href);
+    url.searchParams.set('tab', tab);
+    window.history.replaceState({}, '', url);
+  }
+  function toggleConfRow(id) {
+    const row     = document.getElementById(id);
+    const chevron = document.getElementById(`${id.replace('conf-', 'conf-chevron-')}`);
+    if (row) {
+      const isOpen = row.style.display !== 'none';
+      row.style.display = isOpen ? 'none' : 'table-row';
+      if (chevron) chevron.style.transform = isOpen ? 'rotate(0deg)' : 'rotate(90deg)';
+    }
+  }
+  function toggleActDirRow(id) {
+    const row     = document.getElementById(id);
+    const chevron = document.getElementById(`${id.replace('adir-', 'adir-chevron-')}`);
+    if (row) {
+      const isOpen = row.style.display !== 'none';
+      row.style.display = isOpen ? 'none' : 'table-row';
+      if (chevron) chevron.style.transform = isOpen ? 'rotate(0deg)' : 'rotate(90deg)';
+    }
+  }
+  function togglePubRow(id) {
+    const row     = document.getElementById(id);
+    const chevron = document.getElementById(`${id.replace('pub-', 'pub-chevron-')}`);
+    if (row) {
+      const isOpen = row.style.display !== 'none';
+      row.style.display = isOpen ? 'none' : 'table-row';
+      if (chevron) chevron.style.transform = isOpen ? 'rotate(0deg)' : 'rotate(90deg)';
+    }
+  }
+
+  function toggleGrantRow(id) {
+    const row     = document.getElementById(id);
+    const chevron = document.getElementById(`${id.replace('grant-', 'grant-chevron-')}`);
+    if (row) {
+      const isOpen = row.style.display !== 'none';
+      row.style.display = isOpen ? 'none' : 'table-row';
+      if (chevron) chevron.style.transform = isOpen ? 'rotate(0deg)' : 'rotate(90deg)';
+    }
+  }
+</script>
+</body>
+</html>

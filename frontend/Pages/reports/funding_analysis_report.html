@@ -1,0 +1,675 @@
+{% load static %}
+{% load humanize %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Funding Analysis Report</title>
+  <link rel="icon" href="{% static 'assets/IBE-logo.png' %}">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css">
+  <link rel="stylesheet" href="{% static 'css/dashboard.css' %}">
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/echarts/5.4.3/echarts.min.js"></script>
+  <style>
+
+    .dashboard-main {
+      flex: 1;
+      padding: 28px 36px 40px 40px;
+      overflow-y: auto;
+      max-width: 80%;
+      scrollbar-width: none;
+      -ms-overflow-style: none;
+    }
+
+    :root {
+      --red: #C8102E; --red-dark: #9e0c24; --red-pale: #fff5f6;
+      --ink: #1a1a2e; --muted: #6b7280; --light: #9ca3af;
+      --border: #e5e7eb; --surface: #f9fafb; --white: #ffffff;
+      --green: #059669; --green-pale: #ecfdf5;
+      --blue: #1d4ed8; --blue-pale: #eff6ff;
+    }
+
+    .report-shell { font-family: 'DM Sans', sans-serif; max-width: 2000px; margin: 0 auto; }
+
+    /* ── Header ──────────────────────────────────────── */
+    .report-top {
+      display: flex; justify-content: space-between; align-items: center;
+      padding-bottom: 20px; margin-bottom: 24px;
+      border-bottom: 1px solid var(--border); flex-wrap: wrap; gap: 12px;
+    }
+    .report-top h1 {
+      font-size: 24px; font-weight: 700; color: var(--ink); margin: 0;
+      display: flex; align-items: center; gap: 10px;
+    }
+    .report-top h1 i { color: var(--red); }
+    .report-top .subtitle { font-size: 14px; color: var(--muted); margin-top: 4px; }
+    .btn-export {
+      display: inline-flex; align-items: center; gap: 6px;
+      background: var(--white); color: var(--red); border: 1.5px solid var(--red);
+      border-radius: 8px; padding: 8px 16px; font-size: 14px; font-weight: 600;
+      text-decoration: none; cursor: pointer; transition: background 0.2s; font-family: inherit;
+    }
+    .btn-export:hover { background: var(--red-pale); }
+
+    /* ── KPI row ─────────────────────────────────────── */
+    .kpi-row {
+      display: grid; grid-template-columns: repeat(auto-fit, minmax(130px, 1fr));
+      gap: 12px; margin-bottom: 8px;
+    }
+    .kpi {
+      background: var(--white); border: 1px solid var(--border); border-radius: 10px;
+      padding: 14px 16px; text-align: center;
+    }
+    .kpi-val { font-size: 22px; font-weight: 700; color: var(--red); line-height: 1.1; }
+    .kpi-lbl { font-size: 12px; font-weight: 600; color: var(--muted); text-transform: uppercase; letter-spacing: 0.5px; margin-top: 5px; }
+    .kpi.blue .kpi-val  { color: var(--blue); }
+    .kpi.green .kpi-val { color: var(--green); }
+
+    /* ── Role summary cards (last 3 years) ───────────── */
+    .role-summary {
+      display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 16px;
+    }
+    .role-card {
+      border-radius: 8px; padding: 12px 16px;
+      display: flex; align-items: center; gap: 12px;
+    }
+    .role-card.pi-card  { background: var(--green-pale); border: 1px solid #a7f3d0; }
+    .role-card.coi-card { background: var(--surface);    border: 1px solid var(--border); }
+    .role-card .rc-icon { font-size: 22px; }
+    .pi-card  .rc-icon  { color: var(--green); }
+    .coi-card .rc-icon  { color: var(--muted); }
+    .role-card .rc-amt  { font-size: 18px; font-weight: 700; margin: 0; }
+    .pi-card  .rc-amt   { color: var(--green); }
+    .coi-card .rc-amt   { color: var(--ink); }
+    .role-card .rc-lbl  { font-size: 12px; color: var(--muted); margin: 2px 0 0; }
+
+    /* ── Collapsible sections ────────────────────────── */
+    .report-section {
+      margin-bottom: 16px; background: var(--white);
+      border: 1px solid var(--border); border-radius: 12px; overflow: hidden;
+    }
+    .section-header {
+      display: flex; justify-content: space-between; align-items: center;
+      padding: 14px 18px; cursor: pointer; user-select: none; transition: background 0.15s;
+    }
+    .section-header:hover { background: var(--surface); }
+    .section-header h2 {
+      font-size: 14px; font-weight: 700; color: var(--red); margin: 0;
+      text-transform: uppercase; letter-spacing: 0.5px;
+      display: flex; align-items: center; gap: 8px;
+    }
+    .section-chevron { font-size: 14px; color: var(--light); transition: transform 0.2s; }
+    .report-section.collapsed .section-body    { display: none; }
+    .report-section.collapsed .section-chevron { transform: rotate(-90deg); }
+    .section-body { padding: 0 18px 18px; }
+    .section-desc { font-size: 14px; color: var(--muted); margin: 0 0 14px; line-height: 1.5; }
+
+    /* ── Charts ──────────────────────────────────────── */
+    .chart-box    { height: 320px; }
+    .chart-box-lg { height: 480px; }
+
+    /* ── Tables ──────────────────────────────────────── */
+    .tbl { width: 100%; border-collapse: collapse; }
+    .tbl thead { background: var(--surface); position: sticky; top: 0; z-index: 1; }
+    .tbl th {
+      padding: 9px 12px; text-align: left; font-size: 11px; font-weight: 700;
+      color: var(--muted); text-transform: uppercase; letter-spacing: 0.4px;
+      border-bottom: 1px solid var(--border);
+    }
+    .tbl td { padding: 9px 12px; font-size: 14px; color: var(--ink); border-bottom: 1px solid #f3f4f6; }
+    .tbl tbody tr:last-child td { border-bottom: none; }
+    .tbl tbody tr:hover td { background: #fefefe; }
+    .amt { color: var(--red); font-weight: 700; }
+    .amt-green { color: var(--green); font-weight: 700; }
+
+    .scroll-table { max-height: 380px; overflow-y: auto; scrollbar-width: thin; }
+    .scroll-table::-webkit-scrollbar { width: 5px; }
+    .scroll-table::-webkit-scrollbar-thumb { background: #e0e0e0; border-radius: 3px; }
+
+    /* ── Tabs ────────────────────────────────────────── */
+    .tab-row { display: flex; gap: 2px; margin-bottom: 14px; flex-wrap: wrap; }
+    .tab-btn {
+      padding: 7px 16px; border: 1px solid var(--border); background: var(--surface);
+      font-size: 14px; font-weight: 600; color: var(--muted); cursor: pointer;
+      border-radius: 8px; font-family: inherit; transition: all 0.15s;
+    }
+    .tab-btn:hover  { color: var(--red); border-color: var(--red); }
+    .tab-btn.active { background: var(--red); color: #fff; border-color: var(--red); }
+    .tab-panel { display: none; }
+    .tab-panel.active { display: block; }
+
+    /* ── Filters ─────────────────────────────────────── */
+    .filter-inline {
+      display: flex; gap: 10px; flex-wrap: wrap; align-items: flex-end; margin-bottom: 14px;
+    }
+    .filter-inline input, .filter-inline select {
+      border: 1px solid var(--border); border-radius: 8px; padding: 6px 10px;
+      font-size: 14px; color: var(--ink); background: var(--white); outline: none;
+      font-family: inherit; min-width: 110px;
+    }
+    .filter-inline input:focus,
+    .filter-inline select:focus { border-color: var(--red); }
+    .filter-inline label {
+      font-size: 11px; font-weight: 700; color: var(--muted); text-transform: uppercase;
+      letter-spacing: 0.3px; display: block; margin-bottom: 3px;
+    }
+    .btn-sm { padding: 6px 13px; border-radius: 8px; font-size: 14px; font-weight: 600; cursor: pointer; font-family: inherit; border: none; transition: background 0.2s; }
+    .btn-red   { background: var(--red); color: #fff; }
+    .btn-red:hover   { background: var(--red-dark); }
+    .btn-ghost { background: none; color: var(--muted); border: 1px solid var(--border) !important; }
+    .btn-ghost:hover { border-color: var(--red) !important; color: var(--red); }
+
+    /* ── Depletion table ──────────────────────────────── */
+    .depl-cell   { display: flex; flex-direction: column; gap: 1px; min-width: 90px; }
+    .depl-amt    { font-size: 14px; font-weight: 700; color: var(--red); }
+    .depl-grants { font-size: 11px; color: var(--light); }
+    .depl-bar-bg { height: 3px; background: #f0f0f0; border-radius: 2px; overflow: hidden; margin-top: 3px; }
+    .depl-bar    { height: 100%; background: var(--red); border-radius: 2px; min-width: 1px; }
+
+    .now-badge {
+      font-size: 9px; font-weight: 700; background: var(--red); color: #fff;
+      padding: 1px 5px; border-radius: 3px; margin-left: 5px; vertical-align: middle;
+    }
+    .tbl tbody tr.current-row td { background: var(--red-pale); }
+
+    /* ── Org cards ───────────────────────────────────── */
+    .org-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 14px; }
+    .org-card  { border: 1px solid var(--border); border-radius: 10px; padding: 14px; border-left: 3px solid var(--red); }
+    .org-card h4    { font-size: 14px; font-weight: 700; color: var(--ink); margin: 0 0 6px; line-height: 1.4; }
+    .org-card .org-amt { font-size: 18px; font-weight: 700; color: var(--red); margin: 0 0 3px; }
+    .org-card .org-cnt { font-size: 12px; color: var(--muted); margin: 0; }
+
+    /* ── Pagination ──────────────────────────────────── */
+    .pager { display: flex; justify-content: center; align-items: center; gap: 10px; margin: 14px 0 2px; }
+    .pager button { background: var(--red); color: #fff; padding: 6px 14px; border: none; border-radius: 8px; font-size: 12px; font-weight: 600; cursor: pointer; font-family: inherit; }
+    .pager button:hover:not(:disabled) { background: var(--red-dark); }
+    .pager button:disabled { background: #ddd; cursor: not-allowed; }
+    .pager span { font-size: 12px; color: var(--muted); }
+
+    /* ── Status badges ───────────────────────────────── */
+    .status-active    { background: rgba(5,150,105,0.1); color: #059669; padding: 2px 7px; border-radius: 5px; font-size: 11px; font-weight: 700; white-space: nowrap; }
+    .status-completed { background: rgba(107,114,128,0.1); color: #6b7280; padding: 2px 7px; border-radius: 5px; font-size: 11px; font-weight: 700; white-space: nowrap; }
+    .status-upcoming  { background: rgba(217,119,6,0.1); color: #d97706; padding: 2px 7px; border-radius: 5px; font-size: 11px; font-weight: 700; white-space: nowrap; }
+
+    /* ── Role pills in tables ────────────────────────── */
+    .pill-pi  { background: var(--green-pale); color: #065f46; padding: 1px 7px; border-radius: 4px; font-size: 11px; font-weight: 600; white-space: nowrap; }
+    .pill-coi { background: var(--surface); color: var(--muted); border: 1px solid var(--border); padding: 1px 7px; border-radius: 4px; font-size: 11px; font-weight: 600; white-space: nowrap; }
+
+    /* ── Error ───────────────────────────────────────── */
+    .error-box { background: #fef2f2; color: #991b1b; padding: 14px 18px; border-radius: 10px; font-size: 14px; margin-bottom: 16px; }
+
+    /* ── Info note ───────────────────────────────────── */
+    .info-note { font-size: 12px; color: var(--light); margin: 4px 0 16px; display: flex; align-items: flex-start; gap: 5px; line-height: 1.5; }
+    .info-note i { margin-top: 1px; flex-shrink: 0; }
+
+    @media (max-width: 768px) {
+      .kpi-row    { grid-template-columns: repeat(2, 1fr); }
+      .role-summary { grid-template-columns: 1fr; }
+      .org-grid   { grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); }
+    }
+  </style>
+</head>
+<body>
+<div class="dashboard-layout">
+  {% include "../sidebar.html" %}
+  <div class="dashboard-main">
+    <div class="report-shell">
+
+      <!-- ── Header ─────────────────────────────────────────── -->
+      <div class="report-top">
+        <div>
+          <h1><i class="bi bi-cash-stack"></i> Funding Analysis Report</h1>
+          <div class="subtitle">Funding sources, trends, and distribution · {{ min_year }}–{{ max_year }}</div>
+        </div>
+        <button class="btn-export" onclick="exportCSV()">
+          <i class="bi bi-download"></i> Export CSV
+        </button>
+      </div>
+
+      {% if error %}
+      <div class="error-box"><strong>Error:</strong> {{ error }}</div>
+      {% else %}
+
+      <!-- ── KPI cards ───────────────────────────────────────── -->
+      <div class="kpi-row" style="margin-bottom: 6px;">
+        <div class="kpi">
+          <div class="kpi-val">{{ total_funding }}</div>
+          <div class="kpi-lbl">Total (all)</div>
+        </div>
+        <div class="kpi">
+          <div class="kpi-val">${{ total_cad|floatformat:0|intcomma }}</div>
+          <div class="kpi-lbl">CAD · {{ cad_count }} grants</div>
+        </div>
+        {% if total_usd > 0 %}
+        <div class="kpi" style="border-color:#93c5fd;">
+          <div class="kpi-val" style="color:var(--blue);">USD ${{ total_usd|floatformat:0|intcomma }}</div>
+          <div class="kpi-lbl">USD · {{ usd_count }} grant{{ usd_count|pluralize }}</div>
+        </div>
+        {% endif %}
+        <div class="kpi blue">
+          <div class="kpi-val">{{ total_grants }}</div>
+          <div class="kpi-lbl">Total grants</div>
+        </div>
+        <div class="kpi green">
+          <div class="kpi-val">{{ average_grant }}</div>
+          <div class="kpi-lbl">Avg grant size</div>
+        </div>
+      </div>
+      {% if total_usd > 0 %}
+      <p class="info-note"><i class="bi bi-info-circle"></i> "Total (all)" mixes CAD and USD, use the individual currency KPIs for accurate comparison.</p>
+      {% endif %}
+
+      <!-- ── LAST 3 YEARS ─────────────────────────────────────── -->
+      <div class="report-section">
+        <div class="section-header" onclick="this.parentElement.classList.toggle('collapsed')">
+          <h2><i class="bi bi-clock-history"></i> Awards in last 3 years ({{ last3_start }}–{{ current_year }})</h2>
+          <i class="bi bi-chevron-down section-chevron"></i>
+        </div>
+        <div class="section-body">
+
+          <!-- Role summary mini-cards -->
+          <div class="role-summary">
+            <div class="role-card pi-card">
+              <i class="bi bi-person-check rc-icon"></i>
+              <div>
+                <p class="rc-amt">${{ last3_as_pi.amount|floatformat:0|intcomma }}</p>
+                <p class="rc-lbl">As PI / Lead · {{ last3_as_pi.count }} grant{{ last3_as_pi.count|pluralize }}</p>
+              </div>
+            </div>
+            <div class="role-card coi-card">
+              <i class="bi bi-people rc-icon"></i>
+              <div>
+                <p class="rc-amt">${{ last3_as_coi.amount|floatformat:0|intcomma }}</p>
+                <p class="rc-lbl">As Co-I / Collaborator · {{ last3_as_coi.count }} grant{{ last3_as_coi.count|pluralize }}</p>
+              </div>
+            </div>
+          </div>
+
+          <div class="tab-row">
+            <button class="tab-btn active" onclick="switchTab('org', this)">By Agency</button>
+            <button class="tab-btn" onclick="switchTab('program', this)">By Program</button>
+            <button class="tab-btn" onclick="switchTab('pi', this)">By Researcher</button>
+          </div>
+          <p class="info-note"><i class="bi bi-info-circle"></i> Amounts are total grant values. For IBME-specific amounts scroll to Grants by PI below.</p>
+
+          <!-- Tab: By Agency -->
+          <div id="tab-org" class="tab-panel active">
+            {% if last3_by_org %}
+            <div class="scroll-table">
+              <table class="tbl">
+                <thead><tr><th>Funding Agency</th><th>Amount</th><th>Grants</th><th>Researchers</th></tr></thead>
+                <tbody>
+                  {% for row in last3_by_org %}
+                  <tr>
+                    <td><strong>{{ row.org }}</strong></td>
+                    <td class="amt">${{ row.amount|floatformat:0|intcomma }}</td>
+                    <td>{{ row.count }}</td>
+                    <td>{{ row.researchers }}</td>
+                  </tr>
+                  {% endfor %}
+                </tbody>
+              </table>
+            </div>
+            {% else %}
+            <p class="section-desc" style="text-align:center;padding:20px 0;">No awards in this period.</p>
+            {% endif %}
+          </div>
+
+          <!-- Tab: By Program -->
+          <div id="tab-program" class="tab-panel">
+            {% if last3_by_program %}
+            <div class="scroll-table">
+              <table class="tbl">
+                <thead><tr><th>Program</th><th>Amount</th><th>Grants</th></tr></thead>
+                <tbody>
+                  {% for row in last3_by_program %}
+                  <tr>
+                    <td><strong>{{ row.program }}</strong></td>
+                    <td class="amt">${{ row.amount|floatformat:0|intcomma }}</td>
+                    <td>{{ row.count }}</td>
+                  </tr>
+                  {% endfor %}
+                </tbody>
+              </table>
+            </div>
+            {% else %}
+            <p class="section-desc" style="text-align:center;padding:20px 0;">No program data for this period.</p>
+            {% endif %}
+          </div>
+
+          <!-- Tab: By Researcher -->
+          <div id="tab-pi" class="tab-panel">
+            {% if last3_by_pi %}
+            <div class="scroll-table">
+              <table class="tbl">
+                <thead><tr><th>Researcher</th><th>Amount</th><th>Grants</th><th>Role breakdown</th><th>Agencies</th></tr></thead>
+                <tbody>
+                  {% for row in last3_by_pi %}
+                  <tr>
+                    <td><strong>{{ row.pi }}</strong></td>
+                    <td class="amt">${{ row.amount|floatformat:0|intcomma }}</td>
+                    <td>{{ row.count }}</td>
+                    <td style="white-space:nowrap;">
+                      {% if row.pi_count %}<span class="pill-pi">PI ×{{ row.pi_count }}</span> {% endif %}
+                      {% if row.coi_count %}<span class="pill-coi">Co-I ×{{ row.coi_count }}</span>{% endif %}
+                    </td>
+                    <td style="font-size:12px;color:var(--muted);">{{ row.orgs|join:", " }}</td>
+                  </tr>
+                  {% endfor %}
+                </tbody>
+              </table>
+            </div>
+            {% else %}
+            <p class="section-desc" style="text-align:center;padding:20px 0;">No researcher data for this period.</p>
+            {% endif %}
+          </div>
+
+        </div>
+      </div>
+
+      <!-- ── FUNDING RUNWAY (DEPLETION) ─────────────────────────── -->
+      <div class="report-section">
+        <div class="section-header" onclick="this.parentElement.classList.toggle('collapsed')">
+          <h2><i class="bi bi-hourglass-split"></i> Funding runway · {{ current_year|add:"-4" }}–{{ current_year|add:"1" }}</h2>
+          <i class="bi bi-chevron-down section-chevron"></i>
+        </div>
+        <div class="section-body">
+          <p class="section-desc">
+            Total committed future funding on the books at the start of each year, projected forward 5 years.
+            Uses a linear drawdown model, grant value depletes proportionally as it approaches its end date.
+          </p>
+          <p class="info-note"><i class="bi bi-info-circle"></i> Amounts mix CAD and USD where applicable. USD grants are not converted, use this table for relative trend, not absolute totals if currencies are mixed.</p>
+          {% if depletion_rows %}
+          <div class="scroll-table">
+            <table class="tbl">
+              <thead>
+                <tr>
+                  <th>Snapshot</th>
+                  <th>Y=0 (base)</th>
+                  <th>Y+1</th>
+                  <th>Y+2</th>
+                  <th>Y+3</th>
+                  <th>Y+4</th>
+                  <th>Y+5</th>
+                  <th>5-yr depletion</th>
+                </tr>
+              </thead>
+              <tbody>
+                {% for row in depletion_rows %}
+                <tr class="{% if row.snapshot_year == current_year %}current-row{% endif %}">
+                  <td>
+                    <strong>{{ row.snapshot_year }}</strong>
+                    {% if row.snapshot_year == current_year %}<span class="now-badge">NOW</span>{% endif %}
+                  </td>
+                  {% for y in row.years %}
+                  <td>
+                    <div class="depl-cell">
+                      <span class="depl-amt">${{ y.amount|floatformat:0|intcomma }}</span>
+                      <span class="depl-grants">{{ y.grant_count }} grant{{ y.grant_count|pluralize }}</span>
+                      <div class="depl-bar-bg">
+                        <div class="depl-bar" style="width:{{ y.pct }}%;"></div>
+                      </div>
+                    </div>
+                  </td>
+                  {% endfor %}
+                  <!-- Inline SVG sparkline precomputed in view -->
+                  <td style="vertical-align:middle;padding-top:10px;">
+                    <svg width="{{ spark_svg_w }}" height="{{ spark_svg_h }}" style="display:block;">
+                      {% for y in row.years %}
+                      <rect
+                        x="{{ y.bar_x }}" y="{{ y.bar_y }}"
+                        width="{{ y.bar_w }}" height="{{ y.bar_h }}"
+                        fill="{{ y.bar_col }}" rx="2"
+                      />
+                      {% endfor %}
+                    </svg>
+                  </td>
+                </tr>
+                {% endfor %}
+              </tbody>
+            </table>
+          </div>
+          {% else %}
+          <p class="section-desc" style="text-align:center;padding:20px 0;">No depletion data available.</p>
+          {% endif %}
+        </div>
+      </div>
+
+      <!-- ── SECURED FUNDING TIMELINE ───────────────────────────── -->
+      <div class="report-section">
+        <div class="section-header" onclick="this.parentElement.classList.toggle('collapsed')">
+          <h2><i class="bi bi-graph-up"></i> Secured funding timeline</h2>
+          <i class="bi bi-chevron-down section-chevron"></i>
+        </div>
+        <div class="section-body">
+          <div class="filter-inline">
+            <div>
+              <label>From year</label>
+              <input type="number" id="timeline-year-from" value="{{ year_from }}" min="{{ min_year }}" max="{{ max_year }}">
+            </div>
+            <div>
+              <label>To year</label>
+              <input type="number" id="timeline-year-to" value="{{ year_to }}" min="{{ min_year }}" max="{{ max_year }}">
+            </div>
+            <div style="align-self:flex-end;">
+              <button onclick="applyTimelineFilter()" class="btn-sm btn-red"><i class="bi bi-funnel"></i> Apply</button>
+            </div>
+          </div>
+          <div class="chart-box" id="depletionChart"></div>
+        </div>
+      </div>
+
+      <!-- ── ACTIVE GRANTS TABLE ─────────────────────────────────── -->
+      <div class="report-section">
+        <div class="section-header" onclick="this.parentElement.classList.toggle('collapsed')">
+          <h2><i class="bi bi-file-earmark-text"></i> Grants active in {{ year_from }}–{{ year_to }}</h2>
+          <i class="bi bi-chevron-down section-chevron"></i>
+        </div>
+        <div class="section-body">
+          <div class="filter-inline">
+            <div>
+              <label>Title</label>
+              <input type="text" id="filter-title" placeholder="Search…" onkeyup="applyTableFilters()">
+            </div>
+            <div>
+              <label>Organization</label>
+              <input type="text" id="filter-org" placeholder="Search…" onkeyup="applyTableFilters()">
+            </div>
+            <div>
+              <label>PI / Researcher</label>
+              <input type="text" id="filter-pi" placeholder="Search PI..." onkeyup="applyTableFilters()">
+            </div>
+            <div>
+              <label>Status</label>
+              <select id="filter-status" onchange="applyTableFilters()">
+                <option value="">All</option>
+                <option value="Active">Active</option>
+                <option value="Completed">Completed</option>
+                <option value="Upcoming">Upcoming</option>
+              </select>
+            </div>
+            <div>
+              <label>Sort</label>
+              <select id="sort-by" onchange="applyTableFilters()">
+                <option value="">None</option>
+                <option value="title-asc">Title A–Z</option>
+                <option value="title-desc">Title Z–A</option>
+                <option value="amount-desc">Amount ↓</option>
+                <option value="amount-asc">Amount ↑</option>
+                <option value="start-desc">Start ↓</option>
+                <option value="start-asc">Start ↑</option>
+              </select>
+            </div>
+            <div style="align-self:flex-end;">
+              <button onclick="clearTableFilters()" class="btn-sm btn-ghost">Clear</button>
+            </div>
+          </div>
+          <div class="scroll-table">
+            <table class="tbl">
+              <thead>
+                <tr>
+                  <th>Title</th><th>Organization</th><th>PI</th><th>Role</th><th>Amount</th>
+                  <th>To IBME</th><th>Start</th><th>End</th><th>Status</th>
+                </tr>
+              </thead>
+              <tbody id="grants-table-body"></tbody>
+            </table>
+          </div>
+          <div class="pager">
+            <button id="prev-grants-btn" onclick="previousGrantsPage()">← Prev</button>
+            <span id="grants-page-info">Page 1</span>
+            <button id="next-grants-btn" onclick="nextGrantsPage()">Next →</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- ── GRANTS BY RESEARCHER (PI chart) ───────────────────── -->
+      <div class="report-section">
+        <div class="section-header" onclick="this.parentElement.classList.toggle('collapsed')">
+          <h2><i class="bi bi-people"></i> Grants by researcher</h2>
+          <i class="bi bi-chevron-down section-chevron"></i>
+        </div>
+        <div class="section-body">
+          <div class="filter-inline">
+            <div>
+              <label>From year</label>
+              <input type="number" id="pi-year-from" value="{{ year_from }}" min="{{ min_year }}">
+            </div>
+            <div>
+              <label>To year</label>
+              <input type="number" id="pi-year-to" value="{{ year_to }}" min="{{ min_year }}">
+            </div>
+            <div style="display: flex; flex-direction: row; gap: 10px;">
+              <div>
+                <label>Currency</label>
+                <div style="display:flex;gap:5px;">
+                  <button class="btn-sm btn-red"   id="toggle-all" onclick="setCurrencyFilter('all')">All</button>
+                  <button class="btn-sm btn-ghost"  id="toggle-cad" onclick="setCurrencyFilter('CAD')">CAD</button>
+                  <button class="btn-sm btn-ghost"  id="toggle-usd" onclick="setCurrencyFilter('USD')">USD</button>
+                </div>
+              </div>
+              <div>
+                <label>Role</label>
+                <div style="display:flex;gap:5px;">
+                  <button class="btn-sm btn-red"  id="pi-role-all" onclick="setRoleFilter('all')">All Roles</button>
+                  <button class="btn-sm btn-ghost" id="pi-role-pi"  onclick="setRoleFilter('pi')">PI Only</button>
+                </div>
+              </div>
+            </div>
+            <div style="align-self:flex-end;">
+              <button onclick="renderPIChart()" class="btn-sm btn-red"><i class="bi bi-funnel"></i> Apply</button>
+            </div>
+          </div>
+          <input type="hidden" id="pi-role-filter" value="all">  <!-- ← ADD after filter-inline div -->
+
+          <p id="pi-currency-warning" class="info-note">
+            <i class="bi bi-info-circle"></i>
+            "All" mixes CAD and USD totals, select a single currency for accurate comparison.
+          </p>
+
+          <p class="info-note" style="margin-top:0;">
+            <i class="bi bi-info-circle"></i>
+            <span id="pi-role-note-text">Showing all roles — Total Grant includes full project value for Co-PI/Co-App grants.</span>
+          </p>
+          <div class="chart-box-lg" id="piChart"></div>
+          <div class="scroll-table" style="margin-top:12px;">
+            <table class="tbl">
+              <thead>
+                <tr><th>Researcher</th><th>Total funding</th><th>Amount to IBME</th><th>Kept at IBME</th></tr>
+              </thead>
+              <tbody id="pi-table-body"></tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+      <!-- ── TOP ORGANIZATIONS ──────────────────────────────────── -->
+      <div class="report-section collapsed">
+        <div class="section-header" onclick="this.parentElement.classList.toggle('collapsed')">
+          <h2><i class="bi bi-building"></i> Top funding organizations ({{ year_from }}–{{ year_to }})</h2>
+          <i class="bi bi-chevron-down section-chevron"></i>
+        </div>
+        <div class="section-body">
+          <div class="org-grid">
+            {% for org, stats in top_orgs %}
+            <div class="org-card">
+              <h4>{{ org }}</h4>
+              <p class="org-amt">${{ stats.amount|floatformat:0|intcomma }}</p>
+              <p class="org-cnt"><i class="bi bi-file-earmark-text"></i> {{ stats.count }} grant{{ stats.count|pluralize }}</p>
+            </div>
+            {% endfor %}
+          </div>
+        </div>
+      </div>
+
+      <!-- ── NEW GRANTS BY YEAR ─────────────────────────────────── -->
+      <div class="report-section collapsed">
+        <div class="section-header" onclick="this.parentElement.classList.toggle('collapsed')">
+          <h2><i class="bi bi-bar-chart-line"></i> New grants awarded by year</h2>
+          <i class="bi bi-chevron-down section-chevron"></i>
+        </div>
+        <div class="section-body">
+          <div class="chart-box" id="fundingChart"></div>
+        </div>
+      </div>
+
+      {% endif %}{# /error #}
+    </div>{# /report-shell #}
+  </div>{# /dashboard-main #}
+</div>{# /dashboard-layout #}
+
+<script src="{% static 'js/dashboard.js' %}"></script>
+<script>
+  window.minYear     = {{ min_year }};
+  window.maxYear     = {{ max_year }};
+  window.currentYear = {{ current_year }};
+
+  window.timelineChartData = [
+    {% for item in timeline_data %}
+    { year: {{ item.year }}, funding: {{ item.secured_funding }}, grants: {{ item.active_grants }} }{% if not forloop.last %},{% endif %}
+    {% endfor %}
+  ];
+
+  window.byPIData = [
+    {% for row in by_pi_list %}{
+      pi: "{{ row.pi|escapejs }}",
+      amount: {{ row.amount }},
+      amount_to_ibme: {{ row.amount_to_ibme }},
+      amount_kept: {{ row.amount_kept|default:0 }},
+      count: {{ row.count }},
+      grants: [{% for g in row.grants %}{
+        amount: {{ g.amount }},
+        amount_to_ibme: {{ g.amount_to_ibme }},
+        grant_total: {{ g.grant_total|default:0 }},
+        currency: "{{ g.currency|default:'CAD' }}",
+        start: {{ g.start|default:"null" }},
+        end: {{ g.end|default:"null" }},
+        role: "{{ g.role|default:'' }}"
+    }{% if not forloop.last %},{% endif %}{% endfor %}]
+    }{% if not forloop.last %},{% endif %}{% endfor %}
+  ];
+
+  window.fundingTrendData = [
+    {% for year, data in by_year.items %}
+    { year: {{ year }}, amount: {{ data.amount }} }{% if not forloop.last %},{% endif %}
+    {% endfor %}
+  ];
+
+  window.grantsData = [
+    {% for grant in active_grants_detail %}{
+      title: "{{ grant.title|escapejs }}",
+      organization: "{{ grant.organization|escapejs }}",
+      pi: "{{ grant.pi|escapejs }}",
+      role: "{{ grant.role|escapejs }}",
+      amount: {{ grant.amount }},
+      amount_to_ibme: {{ grant.amount_to_ibme|default:"null" }},
+      currency: "{{ grant.currency|default:'CAD' }}",
+      status: "{{ grant.status|default:''|escapejs }}",
+      start_year: {{ grant.start_year }},
+      end_year: {{ grant.end_year }}
+    }{% if not forloop.last %},{% endif %}{% endfor %}
+  ];
+</script>
+<script src="{% static 'js/funding_analysis_report.js' %}"></script>
+</body>
+</html>
