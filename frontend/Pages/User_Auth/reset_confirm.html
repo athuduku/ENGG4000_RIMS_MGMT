@@ -39,27 +39,70 @@
     .form-note {
       text-align: center;
       color: #555;
-      font-size: 18px;
+      font-size: 15px;
       margin-bottom: 25px;
     }
 
-    label {
+    .field-group {
+      margin-bottom: 18px;
+    }
+
+    .field-group label {
       display: block;
       text-align: left;
       color: #333;
       font-weight: 600;
-      margin-top: 10px;
       margin-bottom: 6px;
-      font-size: 18px;
+      font-size: 15px;
     }
 
-    input {
+    .field-group input {
       width: 100%;
-      padding: 10px;
-      margin-top: 5px;
+      padding: 12px 14px;
       border-radius: 6px;
       border: 1px solid #ccc;
-      font-size: 18px;
+      font-size: 15px;
+      font-family: "Poppins", sans-serif;
+      box-sizing: border-box;
+      transition: border-color 0.2s;
+    }
+
+    .field-group input:focus {
+      outline: none;
+      border-color: #C8102E;
+      box-shadow: 0 0 0 3px rgba(200, 16, 46, 0.1);
+    }
+
+    /* Password strength hint list */
+    .help-list {
+      list-style: none;
+      padding: 0;
+      margin: 6px 0 0;
+    }
+
+    .help-list li {
+      font-size: 12px;
+      color: #888;
+      padding: 2px 0;
+    }
+
+    .help-list li::before {
+      content: "• ";
+      color: #C8102E;
+    }
+
+    /* Error messages from Django */
+    .error-list {
+      list-style: none;
+      padding: 0;
+      margin: 6px 0 0;
+    }
+
+    .error-list li {
+      font-size: 13px;
+      color: #C8102E;
+      font-weight: 500;
+      padding: 2px 0;
     }
 
     .button {
@@ -69,10 +112,10 @@
       border: none;
       padding: 12px;
       border-radius: 6px;
-      font-size: 17px;
-      font-weight: 500;
+      font-size: 15px;
+      font-weight: 600;
       cursor: pointer;
-      margin-top: 25px;
+      margin-top: 10px;
       transition: background 0.3s ease;
     }
 
@@ -99,35 +142,44 @@
     }
 
     .right-panel p {
-      font-size: 18px;
+      font-size: 16px;
       max-width: 400px;
       color: #f8f8f8;
       line-height: 1.6;
     }
 
+    .invalid-link {
+      text-align: center;
+      padding: 20px;
+    }
+
+    .invalid-link p {
+      color: #C8102E;
+      font-weight: 500;
+      margin-bottom: 15px;
+    }
+
+    .invalid-link a {
+      color: #C8102E;
+      font-weight: 600;
+      text-decoration: none;
+    }
+
+    .invalid-link a:hover {
+      text-decoration: underline;
+    }
+
     @media (max-width: 900px) {
-      body {
-        flex-direction: column;
-      }
-
-      .right-panel {
-        display: none;
-      }
-
-      .left-panel {
-        width: 100%;
-        flex: none;
-      }
-
-      .form-container {
-        width: 90%;
-        max-width: 400px;
-      }
+      body { flex-direction: column; }
+      .right-panel { display: none; }
+      .left-panel { width: 100%; flex: none; }
+      .form-container { width: 90%; max-width: 420px; }
     }
   </style>
 </head>
 
 <body>
+
   <div class="right-panel">
     <h1>Reset Your Password</h1>
     <p>To protect your account, please set a new password that is strong and unique. Avoid using old or easily guessed passwords.</p>
@@ -136,25 +188,76 @@
   <div class="left-panel">
     <div class="form-container">
       <h2>Set a New Password</h2>
-      <p class="form-note">Please enter and confirm your new password below to complete the reset process.</p>
+      <p class="form-note">Enter and confirm your new password below.</p>
 
       {% if validlink %}
         <form method="POST">
           {% csrf_token %}
-          <label for="id_new_password1">New password</label>
-          {{ form.new_password1 }}
 
-          <label for="id_new_password2" style="margin-top:12px;">Confirm new password</label>
-          {{ form.new_password2 }}
+          {# ── Non-field errors (e.g. passwords don't match) ── #}
+          {% if form.non_field_errors %}
+            <ul class="error-list" style="margin-bottom: 14px;">
+              {% for error in form.non_field_errors %}
+                <li>{{ error }}</li>
+              {% endfor %}
+            </ul>
+          {% endif %}
+
+          {# ── New Password ── #}
+          <div class="field-group">
+            <label for="{{ form.new_password1.id_for_label }}">New Password</label>
+            <input
+              type="password"
+              name="{{ form.new_password1.html_name }}"
+              id="{{ form.new_password1.id_for_label }}"
+              placeholder="Enter new password"
+              required
+            >
+            {% if form.new_password1.errors %}
+              <ul class="error-list">
+                {% for error in form.new_password1.errors %}
+                  <li>{{ error }}</li>
+                {% endfor %}
+              </ul>
+            {% else %}
+              {# Show password hints only when no errors #}
+              <ul class="help-list">
+                <li>At least 8 characters</li>
+                <li>Cannot be entirely numeric</li>
+                <li>Cannot be similar to your personal info</li>
+              </ul>
+            {% endif %}
+          </div>
+
+          {# ── Confirm Password ── #}
+          <div class="field-group">
+            <label for="{{ form.new_password2.id_for_label }}">Confirm New Password</label>
+            <input
+              type="password"
+              name="{{ form.new_password2.html_name }}"
+              id="{{ form.new_password2.id_for_label }}"
+              placeholder="Re-enter new password"
+              required
+            >
+            {% if form.new_password2.errors %}
+              <ul class="error-list">
+                {% for error in form.new_password2.errors %}
+                  <li>{{ error }}</li>
+                {% endfor %}
+              </ul>
+            {% endif %}
+          </div>
 
           <button type="submit" class="button">Change Password</button>
         </form>
+
       {% else %}
-        <p style="color:red; text-align:center;">The password reset link is invalid or expired.</p>
-        <div style="text-align:center; margin-top:15px;">
-          <a href="{% url 'forgot_pass' %}" style="color:#C8102E; font-weight:500;">Request a new reset link</a>
+        <div class="invalid-link">
+          <p>This password reset link is invalid or has expired.</p>
+          <a href="{% url 'forgot_pass' %}">Request a new reset link →</a>
         </div>
       {% endif %}
+
     </div>
   </div>
 

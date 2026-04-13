@@ -194,3 +194,25 @@ p.bottom-text a:hover {
     font-size: 16px;
   }
 }
+
+.password-wrapper {
+  position: relative;
+}
+
+.password-wrapper input {
+  width: 100%;
+  padding-right: 40px; /* space for dot */
+}
+
+#strengthDot {
+  position: absolute;
+  right: 10px;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  background: transparent;
+  border: 1px solid #ccc;
+  box-shadow: 0 0 6px rgba(0,0,0,0.2);
+}

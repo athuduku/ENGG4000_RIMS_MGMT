@@ -1,0 +1,188 @@
+{% load static %}
+{% load humanize %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>My Projects</title>
+  <link rel="icon" href="{% static 'assets/IBE-logo.png' %}">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css">
+  <link rel="stylesheet" href="{% static 'css/projects.css' %}">
+  <link rel="stylesheet" href="{% static 'css/dashboard.css' %}">
+  <link rel="stylesheet" href="{% static 'css/project_detail_modal.css' %}">
+</head>
+<body>
+  <div class="dashboard-layout">
+    {% include "../sidebar.html" %}
+    <div class="dashboard-main">
+      <div class="projects-wrapper">
+        <div class="sidebar-divider"></div>
+
+        <aside class="sidebar">
+          <div class="sidebar-section">
+            <div class="sidebar-title"><span><i class="bi bi-funnel"></i> Filters</span></div>
+            <div class="filter-item">
+              <input type="checkbox" id="filter-all" checked>
+              <label for="filter-all">All Projects</label>
+            </div>
+          </div>
+          <div class="sidebar-section">
+            <div class="sidebar-title">Status</div>
+            <div id="status-filters-container"></div>
+          </div>
+          <div class="sidebar-section">
+            <div class="sidebar-title">Your Role</div>
+            <div id="role-filters-container"></div>
+          </div>
+          <div class="sidebar-section">
+            <div class="sidebar-title">Year</div>
+            <div class="year-range">
+              <input type="number" id="year-from" placeholder="From" min="1900" max="2099">
+              <span class="year-separator">-</span>
+              <input type="number" id="year-to" placeholder="To" min="1900" max="2099">
+            </div>
+          </div>
+          <div class="sidebar-section">
+            <button class="clear-filters-btn"><i class="bi bi-x-circle"></i> Clear All Filters</button>
+          </div>
+        </aside>
+
+        <main class="main-content">
+          <div class="search-section">
+            <div class="search-box">
+              <i class="bi bi-search"></i>
+              <input type="text" id="search-input" placeholder="Search by project title or team member...">
+            </div>
+            <div class="sort-control">
+              <span class="sort-label">Sort by:</span>
+              <select class="sort-select" id="sort-by">
+                <option value="recent">Most Recent</option>
+                <option value="oldest">Oldest</option>
+                <option value="title-asc">Title (A-Z)</option>
+                <option value="title-desc">Title (Z-A)</option>
+              </select>
+            </div>
+          </div>
+
+          <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:16px; flex-wrap:wrap; gap:12px;">
+            <div class="projects-header"><h2>Projects</h2></div>
+            <div>
+              
+              <a href="{% url 'export_projects_csv' %}" class="export-btn">
+                            <i class="bi bi-download"></i> Export Grants CSV
+                          </a>
+              {% if user.user_type == 'researcher' %}
+              <a href="{% url 'add_project' %}" class="btn-log-project">
+                <i class="bi bi-folder-plus"></i>
+                <span>Add Project</span>
+              </a>
+              {% endif %}
+            </div>
+           
+          </div>
+          <div class="results-info">
+            <span id="results-count">0 projects found</span>
+            <span id="active-filters" class="active-filters"></span>
+          </div>
+
+          {% csrf_token %}
+
+          {% if projects %}
+            <div class="projects-list" id="projects-list">
+              {% for project in projects %}
+              <div class="project-card"
+                   data-project-id="{{ project.id }}"
+                   data-status="{{ project.status }}"
+                   data-role="{{ project.role }}"
+                   data-year="{{ project.start_date|slice:':4' }}"
+                   data-title="{{ project.title|lower }}"
+                   data-team="{% for member in project.team_members.all %}{{ member.name|lower }} {% endfor %}">
+
+                <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:15px;margin-bottom:15px;">
+  
+                  <h3 class="project-title" style="cursor:pointer;margin:0;flex:1;">
+                    {{ project.title }}
+                  </h3>
+
+                  <div class="badge-group">
+
+                    {% if project.is_active %}
+                      <span class="active-badge">
+                        <i class="bi bi-circle-fill"></i> Active
+                      </span>
+                    {% endif %}
+
+                    <span class="status-badge status-{{ project.status }}">
+                      {{ project.get_status_display }}
+                    </span>
+
+                    {% if project.funding_type %}
+                      <span class="funding-type-badge">
+                        {{ project.funding_type }}
+                      </span>
+                    {% endif %}
+
+                  </div>
+
+                </div>
+
+                <div class="project-meta">
+                  <div class="meta-item">
+                    <span class="meta-label">Your Role</span>
+                    <span class="meta-value role-badge role-{{ project.role }}">{{ project.get_role_display }}</span>
+                  </div>
+                  {% if project.start_date %}
+                  <div class="meta-item">
+                    <span class="meta-label">Period</span>
+                    <span class="meta-value">{{ project.start_date }} to {{ project.end_date }}</span>
+                  </div>
+                  {% endif %}
+                </div>
+
+                {% if project.funding_organization %}
+                <div class="funding-section">
+                  <div class="funding-label">FUNDING</div>
+                  <div class="funding-info">
+                    <div class="funding-item"><span class="funding-org">{{ project.funding_organization }}</span></div>
+                    <div class="funding-item">
+                    <span class="funding-amount">
+                        {% if project.currency == 'USD' %}USD {% endif %}${{ project.total_funding|floatformat:0|intcomma }}
+                    </span>                      
+                      {% if project.total_funding_received %}
+                      <span class="funding-received">(Received: ${{ project.total_funding_received|floatformat:0|intcomma }})</span>
+                      {% endif %}
+                    </div>
+                  </div>
+                </div>
+                {% endif %}
+
+              </div>
+              {% endfor %}
+            </div>
+
+            
+
+            <div id="pagination-container" class="pagination-container">
+              <button class="pagination-btn" id="prev-btn">← Previous</button>
+              <span class="pagination-info" id="page-info">Page 1</span>
+              <button class="pagination-btn" id="next-btn">Next →</button>
+            </div>
+
+          {% else %}
+            <div class="no-projects">
+              <i class="bi bi-briefcase"></i>
+              <h3>No projects yet</h3>
+              <p>Your research projects from CCV uploads will appear here</p>
+            </div>
+          {% endif %}
+
+        </main>
+      </div>
+    </div>
+  </div>
+
+  {% include "./project_detail_modal.html" %}
+  <script src="{% static 'js/project_detail_modal.js' %}"></script>
+  <script src="{% static 'js/projects.js' %}"></script>
+</body>
+</html>

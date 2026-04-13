@@ -1,0 +1,55 @@
+<!-- Activity Detail Modal -->
+<div id="activityDetailModal" class="activity-detail-modal">
+  <div class="activity-detail-overlay" onclick="closeActivityModal()"></div>
+  
+  <div class="activity-detail-panel">
+
+    <!-- HEADER -->
+    <div class="activity-detail-header">
+      <div class="header-left">
+        <h2 id="activityTitle" class="activity-detail-title">Activity Title</h2>
+        <div class="activity-meta">
+          <span id="activityType"></span>
+          <span id="activityCategory"></span>
+          <span id="activitySource"></span>
+        </div>
+      </div>
+      <button class="activity-detail-close" onclick="closeActivityModal()">
+        <i class="bi bi-x-lg"></i>
+      </button>
+    </div>
+
+    <!-- CONTENT -->
+    <div class="activity-detail-content">
+
+      <div class="detail-section" id="objectivesSection" style="display:none;">
+        <h3 class="detail-section-title">Strategic Objectives</h3>
+        <div id="activityObjectives" style="display:flex;flex-wrap:wrap;gap:8px;margin-top:8px;"></div>
+      </div>
+
+      <div class="detail-section compact">
+        <div class="detail-row">
+          <div class="detail-item">
+            <span class="detail-label">Date</span>
+            <span id="activityDate" class="detail-value-text">-</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="detail-section" id="detailsSection" style="display:none;">
+        <h3 class="detail-section-title">Details</h3>
+        <div id="activityDetails" class="activity-details-grid"></div>
+      </div>
+
+    </div>
+
+    <!-- FOOTER -->
+    <div class="activity-detail-footer" id="modalDeleteSection">
+      <button class="btn-modal-delete" onclick="deleteFromModal()">
+        <i class="bi bi-trash3"></i>
+        <span>Delete Activity</span>
+      </button>
+    </div>
+
+  </div>
+</div>

@@ -1,0 +1,407 @@
+<!-- Project Detail Modal -->
+<div id="projectDetailModal" class="project-detail-modal">
+  <div class="project-detail-overlay"></div>
+
+  <div class="project-detail-panel" role="dialog" aria-modal="true" aria-labelledby="projectTitle">
+    <div class="project-detail-header">
+      <div class="project-detail-head-main">
+        <h2 id="projectTitle" class="project-detail-title">Project Title</h2>
+
+        <div class="project-detail-badges">
+          <div id="projectStatus"></div>
+          <div id="projectFundingType" style="display:none;"></div>
+          <div id="projectRole"></div>
+        </div>
+      </div>
+
+      <button class="project-detail-close" id="modalCloseBtn" aria-label="Close">
+        <i class="bi bi-x-lg"></i>
+      </button>
+    </div>
+
+    <!-- Tabs -->
+    <div class="project-detail-tabs">
+      <button type="button" class="project-tab-btn active" data-tab="overviewTab">Overview</button>
+      <button type="button" class="project-tab-btn" data-tab="fundingTab">Funding</button>
+      <button type="button" class="project-tab-btn" data-tab="teamTab">People</button>
+      <button type="button" class="project-tab-btn" data-tab="outputsTab">Outputs</button>
+      <button type="button" class="project-tab-btn" data-tab="manageTab">Manage</button>
+    </div>
+
+    <div class="project-detail-content">
+      <!-- OVERVIEW TAB -->
+      <div class="project-tab-pane active" id="overviewTab">
+        <!-- Summary -->
+        <div class="detail-section compact" id="summarySection" style="display:none;">
+          <div class="section-top-row">
+            <div>
+              <div class="detail-section-title" style="margin-bottom:8px;">Project Summary</div>
+            </div>
+          </div>
+
+          <p id="projectSummary" class="detail-summary-text"></p>
+        </div>
+
+        <!-- Quick facts -->
+        <div class="detail-grid-2">
+          <div class="detail-section compact">
+            <h3 class="detail-section-title">Start Date</h3>
+            <span id="projectStartDate" class="detail-value-text">-</span>
+          </div>
+
+          <div class="detail-section compact">
+            <h3 class="detail-section-title">End Date</h3>
+            <span id="projectEndDate" class="detail-value-text">-</span>
+          </div>
+        </div>
+
+        
+
+        <!-- Description -->
+        <div class="detail-section compact" id="descriptionSection" style="display:none;">
+          <h3 class="detail-section-title">Description</h3>
+          <p id="projectDescription" class="detail-description-text"></p>
+        </div>
+
+        <!-- Conception -->
+        <div class="detail-section compact" id="conceptionSection">
+          <h3 class="detail-section-title">Project Conception</h3>
+          <div id="conceptionDisplay">
+            <p id="projectConception" class="detail-description-text" style="margin-bottom:12px;">No conception notes yet.</p>
+            <button class="btn-edit-next-steps" id="editConceptionBtn">
+              <i class="bi bi-pencil"></i> Edit
+            </button>
+          </div>
+          <div id="conceptionEdit" style="display:none;">
+            <textarea id="conceptionTextarea" class="detail-textarea"
+                      placeholder="Describe how this project idea originated, including relevant stakeholder or partner input..."></textarea>
+            <div class="detail-actions">
+              <button class="btn-save" id="saveConceptionBtn">Save</button>
+              <button class="btn-cancel" id="cancelConceptionBtn">Cancel</button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Next Steps -->
+        <div class="detail-section compact">
+          <h3 class="detail-section-title">Next Steps</h3>
+          <div id="nextStepsDisplay">
+            <p id="projectNextSteps" class="detail-description-text" style="margin-bottom:12px;">No next steps defined yet.</p>
+            <button class="btn-edit-next-steps" id="editNextStepsBtn">
+              <i class="bi bi-pencil"></i> Edit
+            </button>
+          </div>
+          <div id="nextStepsEdit" style="display:none;">
+            <textarea id="nextStepsTextarea" class="detail-textarea" placeholder="Add next steps..."></textarea>
+            <div class="detail-actions">
+              <button class="btn-save" id="saveNextStepsBtn">Save</button>
+              <button class="btn-cancel" id="cancelNextStepsBtn">Cancel</button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- FUNDING TAB -->
+      <div class="project-tab-pane" id="fundingTab">
+          
+          <!-- Editable summary -->
+          <div class="detail-section compact">
+              <div class="section-top-row">
+                  <h3 class="detail-section-title">Funding</h3>
+              </div>
+              <div id="fundingSummaryDisplay">
+                  <div class="detail-grid-2" style="margin-bottom:10px;">
+                    <div>
+                      <span class="detail-label">Organization</span>
+                      <div id="fundingOrgValue" class="detail-value-text">—</div>
+                    </div>
+                    <div>
+                      <span class="detail-label">Funding Type</span>
+                      <div id="fundingTypeValue" class="detail-value-text">—</div>
+                    </div>
+                    <div>
+                      <span class="detail-label">Currency</span>
+                      <div id="fundingCurrencyValue" class="detail-value-text">-</div>
+                  </div>
+                  <br>
+                    <div>
+                      <span class="detail-label">Total Project Funding (all sources)</span>
+                      <div id="fundingTotalValue" class="detail-value-text">—</div>
+                      <div style="font-size:11px;color:#9ca3af;margin-top:2px;">Auto-filled from CCV · Edit to override</div>
+                    </div>
+                    <div>
+                      <span class="detail-label">Awarded to IBME</span>
+                      <div id="fundingReceivedValue" class="detail-value-text">—</div>
+                      <div style="font-size:11px;color:#9ca3af;margin-top:2px;">Sum of portions received</div>
+                    </div>
+                    <div>
+                      <span class="detail-label">Start Date</span>
+                      <div id="fundingStartValue" class="detail-value-text">—</div>
+                    </div>
+                    <div>
+                      <span class="detail-label">End Date</span>
+                      <div id="fundingEndValue" class="detail-value-text">—</div>
+                    </div>
+                  </div>
+                  <button class="btn-edit-next-steps" id="editFundingBtn" style="margin-top: 10px;">
+                    <i class="bi bi-pencil"></i> Edit
+                  </button>
+              </div>
+              <div id="fundingSummaryEdit" style="display:none;">
+                  <div class="detail-grid-2" style="margin-bottom:10px;">
+                    <div>
+                      <label class="detail-label">Organization</label>
+                      <input type="text" id="fundingOrgInput" class="detail-input" placeholder="e.g. NSERC">
+                    </div>
+                    <div>
+                      <label class="detail-label">Funding Type</label>
+                      <input type="text" id="fundingTypeInput" class="detail-input" placeholder="e.g. Grant">
+                    </div>
+                    <div>
+                      <label class="detail-label">Currency</label>
+                      <select id="fundingCurrencyInput" class="detail-input">
+                          <option value="CAD">CAD</option>
+                          <option value="USD">USD</option>
+                      </select>
+                  </div>
+                  <br>
+                    <div>
+                      <label class="detail-label">Total Project Funding ($)</label>
+                      <input type="number" id="fundingTotalInput" class="detail-input" placeholder="0">
+                      <div style="font-size:11px;color:#9ca3af;margin-top:2px;">Overrides CCV value on save</div>
+                    </div>
+                    <div>
+                      <label class="detail-label">Awarded to IBME ($)</label>
+                      <input type="number" id="fundingReceivedInput" class="detail-input" placeholder="0">
+                    </div>
+                    <div>
+                      <label class="detail-label">Start Date</label>
+                      <input type="date" id="fundingStartInput" class="detail-input">
+                    </div>
+                    <div>
+                      <label class="detail-label">End Date</label>
+                      <input type="date" id="fundingEndInput" class="detail-input">
+                    </div>
+                  </div>
+                  <div class="detail-actions">
+                    <button class="btn-save" id="saveFundingBtn">Save</button>
+                    <button class="btn-cancel" id="cancelFundingBtn">Cancel</button>
+                  </div>
+              </div>
+              <br>
+              <!-- Kept by UNB -->
+              <div id="keptByUnbSection" class="kept-unb-wrap">
+                  <div id="keptByUnbDisplay">
+                    <span class="detail-label">Kept by IBME</span>
+                    <div class="kept-unb-row">
+                      <span id="keptByUnbValue" class="kept-unb-value">—</span>
+                      <button class="btn-edit-next-steps" id="editKeptByUnbBtn">
+                        <i class="bi bi-pencil"></i> Edit
+                      </button>
+                    </div>
+                  </div>
+                  <div id="keptByUnbEdit" style="display:none;">
+                    <input type="number" id="keptByUnbInput" class="detail-input"
+                          placeholder="Enter amount kept by UNB...">
+                    <div class="detail-actions">
+                      <button class="btn-save" id="saveKeptByUnbBtn">Save</button>
+                      <button class="btn-cancel" id="cancelKeptByUnbBtn">Cancel</button>
+                    </div>
+                  </div>
+              </div>
+              <br>
+              <!-- Year-by-year CCV breakdown -->
+              <div id="fundingRecordsContainer" style="margin-top:14px;"></div>
+          </div>
+
+      </div>
+
+      <!-- PEOPLE TAB -->
+      <div class="project-tab-pane" id="teamTab">
+
+        <!-- HQP Section -->
+        <div class="detail-section compact" id="hqpSection">
+          <div class="link-section-header">
+            <h3 class="detail-section-title">HQP & Team</h3>
+            <span id="hqpCount" class="link-count-badge">0</span>
+          </div>
+          <div id="hqpSummary"></div>
+          <div class="search-block">
+            <p class="link-hint">Tag students and researchers from RIMS as HQP on this project.</p>
+            <div class="link-search-row">
+              <div class="link-search-box">
+                <i class="bi bi-search"></i>
+                <input type="text" id="hqpSearchInput" placeholder="Search students or researchers...">
+              </div>
+            </div>
+            <div id="hqpSearchResults" class="link-search-results" style="display:none;"></div>
+            <div id="taggedMembersList" class="linked-items-list">
+              <p class="link-empty-msg">No members tagged yet.</p>
+            </div>
+          </div>
+        </div>
+
+        <!-- Collaborators & Partners (CCV + Manual merged) -->
+        <div class="detail-section compact" id="externalMembersSection">
+          <div class="link-section-header">
+            <h3 class="detail-section-title">Collaborators & Partners</h3>
+            <span id="externalMembersCount" class="link-count-badge">0</span>
+          </div>
+          <p class="link-hint">
+            CCV investigators appear automatically. Add any external collaborators or partners not in RIMS — academic, industry, community, or government.
+          </p>
+
+          <div id="externalMembersList" class="linked-items-list" style="margin-bottom:14px;">
+            <p class="link-empty-msg">No collaborators or partners yet.</p>
+          </div>
+
+          <!-- Add member form -->
+          <div style="
+            background:#f9fafb;border:1px solid #e5e7eb;border-radius:10px;
+            padding:14px;margin-top:8px;
+          ">
+            <div style="font-size:12px;font-weight:700;color:#6b7280;text-transform:uppercase;
+            letter-spacing:0.3px;margin-bottom:10px;">
+              Add Collaborator or Partner
+            </div>
+            <div style="display:grid;grid-template-columns:1fr 1fr 1fr auto;gap:8px;align-items:end;">
+              <div>
+                <label style="font-size:11px;font-weight:700;color:#6b7280;display:block;margin-bottom:4px;text-transform:uppercase;">Name</label>
+                <input type="text" id="newMemberName" placeholder="e.g. Dr. Smith"
+                      style="width:100%;border:1px solid #e5e7eb;border-radius:8px;padding:8px 10px;
+                              font-size:13px;font-family:inherit;outline:none;box-sizing:border-box;">
+              </div>
+              <div>
+                <label style="font-size:11px;font-weight:700;color:#6b7280;display:block;margin-bottom:4px;text-transform:uppercase;">Role</label>
+                <select id="newMemberRole"
+                        style="width:100%;border:1px solid #e5e7eb;border-radius:8px;padding:8px 10px;
+                              font-size:13px;font-family:inherit;outline:none;background:#fff;">
+                  <option value="co_pi">Co-Investigator</option>
+                  <option value="co_app">Co-applicant</option>
+                  <option value="pa">Principal Applicant</option>
+                  <option value="other" selected>Team Member</option>
+                </select>
+              </div>
+              <div>
+                <label style="font-size:11px;font-weight:700;color:#6b7280;display:block;margin-bottom:4px;text-transform:uppercase;">Partner Type</label>
+                <select id="newMemberPartnerType"
+                        style="width:100%;border:1px solid #e5e7eb;border-radius:8px;padding:8px 10px;
+                              font-size:13px;font-family:inherit;outline:none;background:#fff;">
+                  <option value="academic">Academic</option>
+                  <option value="industry">Industry</option>
+                  <option value="community">Community</option>
+                  <option value="government">Government</option>
+                  <option value="other">Other</option>
+                </select>
+              </div>
+              <button onclick="addExternalMember()" style="
+                background:#C8102E;color:#fff;border:none;border-radius:8px;
+                padding:8px 14px;font-size:13px;font-weight:600;cursor:pointer;
+                white-space:nowrap;font-family:inherit;
+              ">
+                <i class="bi bi-plus"></i> Add
+              </button>
+            </div>
+          </div>
+        </div>
+
+      </div>
+
+      <!-- OUTPUTS TAB -->
+      <div class="project-tab-pane" id="outputsTab">
+        <!-- Publications -->
+        <div class="detail-section compact">
+          <div class="link-section-header">
+            <h3 class="detail-section-title">Linked Publications</h3>
+            <span id="linkedPubCount" class="link-count-badge">0</span>
+          </div>
+
+          <p class="link-hint">Link your publications to this project. Links survive CCV re-uploads.</p>
+
+          <div class="link-search-row">
+            <div class="link-search-box">
+              <i class="bi bi-search"></i>
+              <input type="text" id="pubSearchInput" placeholder="Search your publications to link...">
+            </div>
+          </div>
+
+          <div id="pubSearchResults" class="link-search-results" style="display:none;"></div>
+
+          <div id="linkedPublicationsList" class="linked-items-list">
+            <p class="link-empty-msg">No publications linked yet.</p>
+          </div>
+        </div>
+
+        <!-- Activities -->
+        <div class="detail-section compact">
+          <div class="link-section-header">
+            <h3 class="detail-section-title">Linked Activities</h3>
+            <span id="linkedActCount" class="link-count-badge">0</span>
+          </div>
+
+          <p class="link-hint">Link KM activities, presentations, and outreach to this project.</p>
+
+          <div class="link-search-row">
+            <div class="link-search-box">
+              <i class="bi bi-search"></i>
+              <input type="text" id="actSearchInput" placeholder="Search your activities to link...">
+            </div>
+          </div>
+
+          <div id="actSearchResults" class="link-search-results" style="display:none;"></div>
+
+          <div id="linkedActivitiesList" class="linked-items-list">
+            <p class="link-empty-msg">No activities linked yet.</p>
+          </div>
+        </div>
+
+        <!-- IP Activities -->
+        <div class="detail-section compact" id="ipSection" style="display:none;">
+          <h3 class="detail-section-title">IP Activities</h3>
+          <div id="ipDisplay">
+            <p id="projectIPActivities" class="detail-description-text" style="margin-bottom:12px;">No IP activities recorded.</p>
+            <button class="btn-edit-next-steps" id="editIPBtn">
+              <i class="bi bi-pencil"></i> Edit
+            </button>
+          </div>
+          <div id="ipEdit" style="display:none;">
+            <textarea id="ipTextarea" class="detail-textarea"
+                      placeholder="Describe any IP activities, patents, or licensing related to this project..."></textarea>
+            <div class="detail-actions">
+              <button class="btn-save" id="saveIPBtn">Save</button>
+              <button class="btn-cancel" id="cancelIPBtn">Cancel</button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- MANAGE TAB -->
+      <div class="project-tab-pane" id="manageTab">
+        <div class="detail-section compact" id="modalDeleteSection">
+          <h3 class="detail-section-title">Project Management</h3>
+
+          <div style="margin-bottom: 22px;">
+            <label class="detail-label" for="projectStatusSelect">Project Status</label>
+            <div id="statusEditSection" class="status-edit-inline" style="margin-top:8px;">
+              <select id="projectStatusSelect" class="detail-select" style="max-width:220px;">
+                <option value="awarded">Awarded</option>
+                <option value="submitted">Submitted</option>
+                <option value="pending">Pending</option>
+                <option value="completed">Completed</option>
+                <option value="rejected">Rejected</option>
+              </select>
+              <button class="btn-save" id="saveStatusBtn">Save</button>
+            </div>
+          </div>
+
+          <div style="padding-top:18px; border-top:1px solid #eee;">
+            <h3 class="detail-section-title" style="color:#dc2626;">Danger Zone</h3>
+            <button class="btn-modal-delete" onclick="deleteProjectFromModal()">
+              <i class="bi bi-trash3"></i> Delete Project
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>

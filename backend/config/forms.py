@@ -20,5 +20,5 @@ class CustomUserCreationForm(UserCreationForm):
 class CustomSetPasswordForm(SetPasswordForm):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        # Completely remove the default help text
+        self.fields['new_password1'].help_text = "Enter a strong password."
         self.fields['new_password2'].help_text = "Re-enter your new password for confirmation."

@@ -3,7 +3,6 @@ backend/venv/
 backend/.env/
 venv/
 
-
 # Python cache
 __pycache__/
 *.pyc
@@ -13,6 +12,10 @@ backend/db.sqlite3
 
 # Env variables
 .env
+
+# Uploaded / generated files
+reports/
+*.pdf
 
 # OS junk
 .DS_Store

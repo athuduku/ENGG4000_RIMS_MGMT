@@ -1,0 +1,184 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Bulk CCV Upload</title>
+    <link rel="icon" href="{% static 'assets/IBE-logo.png' %}">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css">
+    <link rel="stylesheet" href="{% static 'css/dashboard.css' %}">
+    <style>
+        .upload-section {
+            max-width: 800px;
+            margin: 40px auto;
+            background: white;
+            padding: 40px;
+            border-radius: 12px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        }
+
+        .upload-section h2 {
+            color: #C8102E;
+            margin-bottom: 30px;
+            font-size: 28px;
+        }
+
+        .upload-box {
+            border: 3px dashed #C8102E;
+            border-radius: 12px;
+            padding: 60px 30px;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.3s;
+            background: rgba(200, 16, 46, 0.05);
+        }
+
+        .upload-box:hover {
+            background: rgba(200, 16, 46, 0.1);
+            border-color: #a00d26;
+        }
+
+        .upload-box i {
+            font-size: 48px;
+            color: #C8102E;
+            margin-bottom: 15px;
+        }
+
+        .upload-box p {
+            margin: 10px 0;
+            color: #333;
+            font-size: 16px;
+        }
+
+        .upload-box input {
+            display: none;
+        }
+
+        .btn {
+            background: #C8102E;
+            color: white;
+            padding: 12px 30px;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            font-weight: 600;
+            font-size: 16px;
+            margin-top: 20px;
+            transition: all 0.3s;
+        }
+
+        .btn:hover {
+            background: #a00d26;
+            transform: translateY(-2px);
+        }
+
+        .results {
+            margin-top: 30px;
+            padding: 20px;
+            background: #f9f9f9;
+            border-radius: 8px;
+            border-left: 4px solid #C8102E;
+            display: none;
+        }
+
+        .results.show {
+            display: block;
+        }
+
+        .results h3 {
+            color: #C8102E;
+            margin-top: 0;
+        }
+
+        .results p {
+            margin: 8px 0;
+            color: #555;
+        }
+
+        .status {
+            margin-top: 20px;
+            padding: 15px;
+            border-radius: 6px;
+            display: none;
+        }
+
+        .status.show {
+            display: block;
+        }
+
+        .status.success {
+            background: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
+        }
+
+        .status.error {
+            background: #f8d7da;
+            color: #721c24;
+            border: 1px solid #f5c6cb;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="dashboard-layout">
+        {% include "../sidebar.html" %}
+
+        <div class="dashboard-main">
+            <div class="upload-section">
+                <h2>Bulk Upload CCV</h2>
+                
+                <form id="ccvForm" enctype="multipart/form-data">
+                    {% csrf_token %}
+                    
+                    <div class="upload-box" onclick="document.getElementById('ccvFile').click()">
+                        <i class="bi bi-file-earmark-xml"></i>
+                        <p>Click to upload or drag and drop</p>
+                        <p style="font-size: 13px; color: #999;">CCV XML files only</p>
+                        <input type="file" id="ccvFile" name="file" accept=".xml" required>
+                    </div>
+
+                    <p id="fileName" style="margin-top: 15px; color: #666;"></p>
+                    <button type="submit" class="btn">Upload & Merge</button>
+                </form>
+
+                <div id="status" class="status"></div>
+                <div id="results" class="results"></div>
+            </div>
+        </div>
+    </div>
+
+    <script src="{% static 'js/dashboard.js' %}"></script>
+ <script>
+    const ccvFile = document.getElementById('ccvFile');
+    const fileName = document.getElementById('fileName');
+    const ccvForm = document.getElementById('ccvForm');
+    const statusDiv = document.getElementById('status');
+    const resultsDiv = document.getElementById('results');
+
+    ccvFile.addEventListener('change', function() {
+        if (this.files.length > 0) {
+            fileName.textContent = `Selected: ${this.files[0].name}`;
+        }
+    });
+
+    ccvForm.addEventListener('submit', async function(e) {
+        e.preventDefault();
+
+        statusDiv.textContent = 'Processing...';
+        statusDiv.className = 'status show';
+        resultsDiv.className = 'results';
+
+        try {
+            const formData = new FormData(this);
+            const response = await fetch('/api/bulk-upload-ccv/', {
+                method: 'POST',
+                body: formData,
+                headers: {
+                    'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value
+                }
+            });
+        }
+</script>
+</body>
+</html>

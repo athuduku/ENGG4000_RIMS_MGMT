@@ -27,3 +27,7 @@ document.getElementById("loginForm").addEventListener("submit", async function(e
     alert("Login failed. Please try again later.");
   }
 });
+
+function showForgotAlert() {
+  alert('To reset your password, please contact your IBME administrator.');
+}

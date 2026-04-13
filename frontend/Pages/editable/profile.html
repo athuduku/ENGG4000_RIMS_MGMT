@@ -1,0 +1,790 @@
+{% load static %}
+{% load auth_extras %}
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8">
+    <title>My Profile</title>
+    <link rel="icon" href="{% static 'assets/IBE-logo.png' %}">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css">
+    <link rel="stylesheet" href="{% static 'css/dashboard.css' %}">
+    <style>
+      :root {
+        --red: #C8102E; --red-dark: #9e0c24; --red-pale: #fff0f2;
+        --ink: #2C3E50; --muted: #6b7280; --border: #e8eaed; --surface: #f8f9fb;
+      }
+      .profile-wrap { max-width: 1600px; padding: 20px 20px; }
+      .profile-grid { display: grid; grid-template-columns: 2fr 1fr; gap: 55px; align-items: start; }
+      .left-column  { display: flex; flex-direction: column; gap: 35px; }
+      .right-column { display: flex; flex-direction: column; gap: 35px; }
+      @media(min-width:900px) {
+        .profile-wrap { padding: 0 15px; margin: 20px 20px; }
+      }
+      .profile-header {
+        display: flex; align-items: center; gap: 28px;
+        margin-bottom: 50px; padding-bottom: 28px; border-bottom: 2px solid var(--border);
+      }
+      .profile-avatar {
+        width: 70px; height: 70px; border-radius: 50%; background: var(--red); color: #fff;
+        font-size: 20px; font-weight: 700; display: flex; align-items: center; justify-content: center;
+      }
+      .profile-header-info h1 { font-size: 20px; margin: 0; font-weight: 600; color: var(--ink); }
+      .profile-header-info p  { margin: 6px 0 0; font-size: 18px; color: var(--muted); }
+      .user-type-badge { display: inline-block; padding: 5px 12px; border-radius: 12px; font-size: 16px; font-weight: 600; margin-top: 10px; }
+      .badge-researcher { background: #d1fae5; color: #065f46; }
+      .badge-student    { background: #dbeafe; color: #1e40af; }
+      .badge-admin      { background: #fee2e2; color: #991b1b; }
+      .profile-card {
+        background: #fff; border: 1px solid var(--border); border-radius: 16px; width: 100%;
+        overflow: hidden; transition: all .25s ease; box-shadow: 0 4px 12px rgba(0,0,0,.06);
+      }
+      .profile-card:hover { transform: translateY(-3px); box-shadow: 0 10px 26px rgba(0,0,0,.1); }
+      .profile-card-header { padding: 22px 26px; border-bottom: 1px solid var(--border); display: flex; align-items: center; gap: 12px; }
+      .profile-card-header i  { font-size: 17px; color: var(--red); }
+      .profile-card-header h2 { font-size: 17px; color: var(--red); margin: 0; font-weight: 600; }
+      .profile-card-body { padding: 20px 28px; }
+      .field-row { display: grid; grid-template-columns: 1fr 1fr; gap: 24px; margin-bottom: 24px; }
+      .field-row.full { grid-template-columns: 1fr; }
+      .field-group { display: flex; flex-direction: column; gap: 10px; }
+      .field-label { font-size: 15px; font-weight: 600; color: var(--muted); }
+      .field-input {
+        border: 1px solid var(--border); border-radius: 10px; padding: 14px 16px;
+        font-size: 15px; outline: none; transition: border-color .2s, box-shadow .2s; font-family: inherit;
+      }
+      .field-input:focus { border-color: var(--red); box-shadow: 0 0 0 3px rgba(200,16,46,.1); }
+      .field-input:disabled { background: var(--surface); color: #999; cursor: not-allowed; border-color: #f0f0f0; }
+      .info-row { display: flex; justify-content: space-between; padding: 14px 0; border-bottom: 1px solid #f1f3f5; font-size: 15px; }
+      .info-row:last-child { border-bottom: none; }
+      .info-row-label { color: var(--muted); font-weight: 600; }
+      .info-row-value { font-weight: 500; color: #999; }
+      .info-row-value.empty { color: #ccc; font-style: italic; }
+      .btn-save-profile {
+        background: var(--red); color: #fff; border: none; border-radius: 10px;
+        padding: 14px 28px; font-size: 15px; font-weight: 600; cursor: pointer;
+        margin-top: 16px; display: inline-flex; align-items: center; text-decoration: none; gap: 8px; font-family: inherit;
+      }
+      .btn-save-profile:hover { background: var(--red-dark); }
+      .profile-card-body p { line-height: 1.7; font-size: 16px; color: var(--muted); }
+      .toast { display: none; padding: 16px 20px; border-radius: 10px; font-size: 16px; font-weight: 600; margin-bottom: 28px; }
+      .toast.success { display: flex; align-items: center; gap: 8px; background: #d1fae5; color: #065f46; }
+      .toast.error   { display: flex; align-items: center; gap: 8px; background: #fee2e2; color: #991b1b; }
+      .education-list { display: flex; flex-direction: column; gap: 16px; }
+      .education-item { border: 1px solid var(--border); border-radius: 10px; padding: 16px 18px; background: #fafafa; }
+      .education-degree { font-size: 18px; font-weight: 600; color: var(--ink); }
+      .education-meta   { font-size: 16px; color: var(--muted); margin-top: 4px; }
+      .education-dates  { font-size: 15px; color: #999; margin-top: 4px; }
+      .education-note   { font-size: 14px; color: #aaa; margin-top: 18px; }
+      .edi-banner {
+        background: #fffbeb; border: 1px solid #fcd34d; border-radius: 12px;
+        padding: 18px 22px; display: flex; align-items: flex-start; gap: 14px; margin-bottom: 28px;
+      }
+      .edi-banner i { font-size: 22px; color: #d97706; flex-shrink: 0; margin-top: 2px; }
+      .edi-banner-text h3 { font-size: 16px; font-weight: 700; color: #92400e; margin: 0 0 4px; }
+      .edi-banner-text p  { font-size: 14px; color: #a16207; margin: 0; line-height: 1.5; }
+      .edi-note {
+        background: var(--surface); border: 1px solid var(--border); border-radius: 10px;
+        padding: 14px 16px; font-size: 14px; color: var(--muted); line-height: 1.6; margin-bottom: 20px;
+      }
+      .consent-row { display: flex; justify-content: space-between; align-items: center; padding: 16px 0; }
+      .consent-row-info h4 { font-size: 18px; font-weight: 700; color: var(--ink); margin: 0 0 4px; }
+      .consent-row-info p  { font-size: 18px; color: var(--muted); margin: 0; line-height: 1.5; }
+      .toggle-switch { position: relative; width: 48px; height: 26px; flex-shrink: 0; }
+      .toggle-switch input { opacity: 0; width: 0; height: 0; }
+      .toggle-slider {
+        position: absolute; cursor: pointer; inset: 0;
+        background: #e5e7eb; border-radius: 26px; transition: .3s;
+      }
+      .toggle-slider::before {
+        content: ''; position: absolute; width: 20px; height: 20px;
+        left: 3px; bottom: 3px; background: #fff; border-radius: 50%; transition: .3s;
+      }
+      .toggle-switch input:checked + .toggle-slider { background: var(--red); }
+      .toggle-switch input:checked + .toggle-slider::before { transform: translateX(22px); }
+      #supervisorModal, #coSupervisorModal {
+        display: none; position: fixed; inset: 0;
+        background: rgba(0,0,0,0.45); z-index: 2000;
+        align-items: center; justify-content: center;
+      }
+      #supervisorSelect, #coSupervisorSelect {
+        width: 100%; padding: 12px 14px; font-size: 15px; border-radius: 10px;
+        border: 1px solid var(--border); outline: none; transition: all .2s;
+        background: white; color: #333;
+      }
+      #supervisorSelect:focus, #coSupervisorSelect:focus {
+        border-color: var(--red); box-shadow: 0 0 0 3px rgba(200,16,46,.1);
+      }
+      #supervisorSelect option, #coSupervisorSelect option { background: #fff; color: #333; }
+      .btn-edi-skip {
+        background: none; border: 1px solid #e8eaed; border-radius: 10px;
+        padding: 14px 28px; height: auto; color: #6b7280; cursor: pointer;
+        font-family: inherit; transition: all 0.2s; font-size: 16px; font-weight: 600; margin-top: 16px;
+      }
+      .co-sup-tag {
+        display: inline-flex; align-items: center; gap: 6px;
+        background: #f0f4ff; border: 1px solid #c7d7ff; border-radius: 20px;
+        padding: 4px 10px; font-size: 14px; color: #1e40af; margin: 2px 4px 2px 0;
+      }
+      .co-sup-tag button {
+        background: none; border: none; cursor: pointer; color: #6b7280;
+        font-size: 14px; padding: 0; line-height: 1; display: flex; align-items: center;
+      }
+      .co-sup-tag button:hover { color: var(--red); }
+    </style>
+  </head>
+  <body>
+    <div class="dashboard-layout">
+      {% include "../sidebar.html" %}
+      <div class="dashboard-main">
+        <div id="profileToast" class="toast"></div>
+        <div class="profile-wrap">
+
+          {% if request.user.user_type == 'student' and student_profile and not student_profile.edi_profile_completed %}
+          <div class="edi-banner" id="ediBanner">
+            <i class="bi bi-exclamation-triangle-fill"></i>
+            <div class="edi-banner-text">
+              <h3>Complete your equity profile</h3>
+              <p>Help IBME report on equity and inclusion. Responses are voluntary and confidential — only used in aggregated anonymous statistics. Your name is never included.</p>
+            </div>
+          </div>
+          {% endif %}
+
+          <!-- HEADER -->
+          <div class="profile-header">
+            <div class="profile-avatar">
+              {{ request.user.first_name|first|upper }}{{ request.user.last_name|first|upper }}
+            </div>
+            <div class="profile-header-info">
+              <h1>{{ request.user.get_full_name }}</h1>
+              <p>{{ request.user.email }}</p>
+              <span class="user-type-badge badge-{{ request.user.user_type }}">
+                {{ request.user.user_type|capfirst }}
+              </span>
+            </div>
+          </div>
+
+          <div class="profile-grid">
+            <div class="left-column">
+
+              <!-- PERSONAL INFO -->
+              <div class="profile-card">
+                <div class="profile-card-header">
+                  <i class="bi bi-person"></i>
+                  <h2>Personal Information</h2>
+                </div>
+                <div class="profile-card-body">
+                  <div class="field-row">
+                    <div class="field-group">
+                      <label class="field-label">First Name</label>
+                      <input type="text" id="firstName" class="field-input" value="{{ request.user.first_name }}">
+                    </div>
+                    <div class="field-group">
+                      <label class="field-label">Last Name</label>
+                      <input type="text" id="lastName" class="field-input" value="{{ request.user.last_name }}">
+                    </div>
+                  </div>
+                  <div class="field-row full">
+                    <div class="field-group">
+                      <label class="field-label">Email</label>
+                      <input type="email" id="email" class="field-input"
+                             value="{{ request.user.email }}" disabled>
+                    </div>
+                  </div>
+                  {% if request.user.user_type == 'researcher' %}
+                  <div class="field-row full">
+                    <div class="field-group">
+                      <label class="field-label">Organization</label>
+                      <input type="text" id="organization" class="field-input" value="{{ request.user.organization|default:'' }}">
+                    </div>
+                  </div>
+                  {% endif %}
+                  <button class="btn-save-profile" onclick="saveBasicInfo()">
+                    <i class="bi bi-check2"></i> Save Changes
+                  </button>
+                </div>
+              </div>
+
+              <!-- ACADEMIC INFO (students) -->
+              {% if request.user.user_type == 'student' and student_profile %}
+              <div class="profile-card">
+                <div class="profile-card-header">
+                  <i class="bi bi-mortarboard"></i>
+                  <h2>Academic Information</h2>
+                </div>
+                <div class="profile-card-body">
+                  <div class="info-row">
+                    <span class="info-row-label">Degree Level</span>
+                    <span class="info-row-value">
+                      <select id="academicDegreeLevel" class="field-input" style="padding:6px 10px;font-size:14px;width:auto;">
+                        <option value="">Not set</option>
+                        <option value="undergrad"  {% if student_profile.degree_level == 'undergrad'  %}selected{% endif %}>Undergraduate</option>
+                        <option value="msc"        {% if student_profile.degree_level == 'msc'        %}selected{% endif %}>MSc</option>
+                        <option value="phd"        {% if student_profile.degree_level == 'phd'        %}selected{% endif %}>PhD</option>
+                        <option value="pdf"        {% if student_profile.degree_level == 'pdf'        %}selected{% endif %}>Post-Doctoral Fellow</option>
+                        <option value="ra"         {% if student_profile.degree_level == 'ra'         %}selected{% endif %}>Research Associate</option>
+                        <option value="other"      {% if student_profile.degree_level == 'other'      %}selected{% endif %}>Other</option>
+                      </select>
+                    </span>
+                  </div>
+                  <div class="info-row">
+                    <span class="info-row-label">Department</span>
+                    <span class="info-row-value">
+                      <input type="text" id="academicDepartment" class="field-input"
+                             style="padding:6px 10px;font-size:14px;width:auto;min-width:220px;"
+                             value="{{ student_profile.department|default:'' }}"
+                             placeholder="e.g. Electrical Engineering">
+                    </span>
+                  </div>
+                  <div class="info-row">
+                    <span class="info-row-label">Supervisor</span>
+                    <span class="info-row-value {% if not student_profile.supervisor %}empty{% endif %}">
+                      {% if student_profile.supervisor %}
+                        {{ student_profile.supervisor.user.get_full_name }}
+                      {% else %}
+                        Not yet assigned
+                        <button class="btn-save-profile" style="margin-left:12px;padding:6px 12px;font-size:14px"
+                                onclick="openSupervisorRequest()">
+                          Request Supervisor
+                        </button>
+                      {% endif %}
+                    </span>
+                  </div>
+                  <div class="info-row" style="align-items:flex-start;">
+                    <span class="info-row-label" style="padding-top:4px;">Co-Supervisor(s)</span>
+                    <span class="info-row-value" style="display:flex;flex-wrap:wrap;align-items:center;gap:4px;">
+                      {% if student_profile.co_supervisors.exists %}
+                        <span id="coSupList">
+                          {% for co in student_profile.co_supervisors.all %}
+                          <span class="co-sup-tag">
+                            {{ co.user.get_full_name }}
+                            <button onclick="removeCoSupervisor({{ co.id }}, '{{ co.user.get_full_name }}')" title="Remove">
+                              <i class="bi bi-x"></i>
+                            </button>
+                          </span>
+                          {% endfor %}
+                        </span>
+                      {% else %}
+                        <span class="empty" id="coSupNone">None assigned</span>
+                      {% endif %}
+                      <button class="btn-save-profile"
+                              style="margin-left:8px;padding:6px 12px;font-size:14px;margin-top:0;"
+                              onclick="openCoSupervisorModal()">
+                        <i class="bi bi-plus"></i> Add
+                      </button>
+                    </span>
+                  </div>
+                  <div class="info-row">
+                    <span class="info-row-label">Start Date</span>
+                    <span class="info-row-value">
+                      <input type="date" id="academicStartDate" class="field-input"
+                             style="padding:6px 10px;font-size:14px;width:auto;"
+                             value="{{ student_profile.start_date|date:'Y-m-d'|default:'' }}">
+                    </span>
+                  </div>
+                  <div class="info-row">
+                    <span class="info-row-label">Expected End Date</span>
+                    <span class="info-row-value">
+                      <input type="date" id="academicExpectedEnd" class="field-input"
+                             style="padding:6px 10px;font-size:14px;width:auto;"
+                             value="{{ student_profile.expected_end_date|date:'Y-m-d'|default:'' }}">
+                    </span>
+                  </div>
+                  <div class="info-row">
+                    <span class="info-row-label">Thesis Title</span>
+                    <span class="info-row-value">
+                      <input type="text" id="academicThesisTitle" class="field-input"
+                             style="padding:6px 10px;font-size:14px;width:auto;min-width:220px;"
+                             value="{{ student_profile.thesis_title|default:'' }}"
+                             placeholder="Your thesis title">
+                    </span>
+                  </div>
+                  <div class="info-row">
+                    <span class="info-row-label">Graduation Date</span>
+                    <span class="info-row-value">
+                      <input type="date" id="academicGraduationDate" class="field-input"
+                             style="padding:6px 10px;font-size:14px;width:auto;"
+                             value="{{ student_profile.graduation_date|date:'Y-m-d'|default:'' }}">
+                    </span>
+                  </div>
+                  <button class="btn-save-profile" onclick="saveAcademicInfo()">
+                    <i class="bi bi-check2"></i> Save Academic Info
+                  </button>
+                  <p style="font-size:13px;color:#bbb;margin:14px 0 0;">
+                    <i class="bi bi-info-circle"></i> Auto-filled from CCV upload where available — you can correct anything here.
+                  </p>
+                </div>
+              </div>
+              {% endif %}
+
+              <!-- RESEARCH PROFILE (researchers) -->
+              {% if request.user.user_type == 'researcher' and researcher_profile %}
+              <div class="profile-card">
+                <div class="profile-card-header">
+                  <i class="bi bi-briefcase"></i>
+                  <h2>Research Profile</h2>
+                </div>
+                <div class="profile-card-body">
+                  <div class="info-row">
+                    <span class="info-row-label">Title</span>
+                    <span class="info-row-value">{{ researcher_profile.title|default:"Not set" }}</span>
+                  </div>
+                  <div class="info-row">
+                    <span class="info-row-label">Sex</span>
+                    <span class="info-row-value">{{ researcher_profile.sex|default:"Not set" }}</span>
+                  </div>
+                  <div class="info-row">
+                    <span class="info-row-label">CCV Identifier</span>
+                    <span class="info-row-value">{{ researcher_profile.ccv_identifier|default:"Not linked" }}</span>
+                  </div>
+                  <div class="info-row">
+                    <span class="info-row-label">Residency</span>
+                    <span class="info-row-value">{{ researcher_profile.residency_status|default:"Not set" }}</span>
+                  </div>
+                  <br>
+                  <div class="field-row full">
+                    <div class="field-group">
+                      <label class="field-label">Research Interests</label>
+                      <textarea id="researchInterests" class="field-input" rows="3">{{ researcher_profile.research_interests|default:'' }}</textarea>
+                    </div>
+                  </div>
+                  <button class="btn-save-profile" onclick="saveResearchInterests()">Save Interests</button>
+                </div>
+              </div>
+              {% endif %}
+
+              <!-- EDUCATION (researchers) -->
+              {% if request.user.user_type == 'researcher' and education %}
+              <div class="profile-card">
+                <div class="profile-card-header">
+                  <i class="bi bi-mortarboard"></i>
+                  <h2>Education</h2>
+                </div>
+                <div class="profile-card-body">
+                  <div class="education-list">
+                    {% for edu in education %}
+                    <div class="education-item">
+                      <div class="education-degree">{{ edu.degree_type }}{% if edu.specialization %} | {{ edu.specialization }}{% endif %}</div>
+                      <div class="education-meta">{{ edu.institution }}</div>
+                      <div class="education-dates">{{ edu.expected_date }}</div>
+                    </div>
+                    {% endfor %}
+                  </div>
+                  <p class="education-note"><i class="bi bi-info-circle"></i> Synced from CCV upload</p>
+                </div>
+              </div>
+              {% endif %}
+
+              <!-- AWARDS (researchers) -->
+              {% if request.user.user_type == 'researcher' and all_award_records %}
+              <div class="profile-card">
+                <div class="profile-card-header">
+                  <i class="bi bi-award"></i>
+                  <h2>Awards & Recognition
+                    <span style="font-size:14px;font-weight:500;color:#999;margin-left:8px;">
+                      ({{ all_award_records|length }})
+                    </span>
+                  </h2>
+                </div>
+                <div class="profile-card-body">
+                  <div class="education-list">
+                    {% for award in all_award_records %}
+                    <div class="education-item award-entry" {% if forloop.counter > 3 %}style="display:none;"{% endif %}>
+                      <div class="education-degree">{{ award.name }}</div>
+                      {% if award.organization %}
+                      <div class="education-meta">{{ award.organization }}</div>
+                      {% endif %}
+                      {% if award.recognition_type %}
+                      <div class="education-meta" style="color:#999;">{{ award.recognition_type }}</div>
+                      {% endif %}
+                      <div class="education-dates">
+                        {% if award.start_date %}{{ award.start_date }}{% endif %}
+                        {% if award.end_date %} — {{ award.end_date }}{% endif %}
+                      </div>
+                      {% if award.amount %}
+                      <div class="education-dates" style="color:var(--red);font-weight:600;">
+                        ${{ award.amount|floatformat:0 }}
+                      </div>
+                      {% endif %}
+                    </div>
+                    {% endfor %}
+                  </div>
+                  {% if all_award_records|length > 3 %}
+                  <button onclick="toggleAwards(this)" class="btn-edi-skip" style="margin-top:12px;width:100%;justify-content:center;">
+                    <i class="bi bi-chevron-down" id="awardsChevron"></i>
+                    Show all {{ all_award_records|length }} awards
+                  </button>
+                  {% endif %}
+                  <p class="education-note">
+                    <i class="bi bi-info-circle"></i> Synced from CCV upload
+                  </p>
+                </div>
+              </div>
+              {% endif %}
+
+              <!-- EDI PROFILE (students only) -->
+              {% if request.user.user_type == 'student' and student_profile %}
+              <div class="profile-card">
+                <div class="profile-card-header">
+                  <i class="bi bi-check2"></i>
+                  <h2>Equity &amp; Diversity Profile</h2>
+                </div>
+                <div class="profile-card-body">
+                  <div class="edi-note">
+                    <i class="bi bi-info-circle" style="color:var(--red);margin-right:4px;"></i>
+                    All fields are <strong>completely voluntary</strong>. Responses are only used in aggregated
+                    anonymous statistics for EDI reporting — your name is never included.
+                    You can change or clear your answers at any time.
+                  </div>
+                  <div class="field-row">
+                    <div class="field-group">
+                      <label class="field-label">Gender</label>
+                      <select id="ediGender" class="field-input">
+                        <option value="">Prefer not to answer</option>
+                        <option value="female"        {% if student_profile.gender == 'female'        %}selected{% endif %}>Female</option>
+                        <option value="male"          {% if student_profile.gender == 'male'          %}selected{% endif %}>Male</option>
+                        <option value="non_binary"    {% if student_profile.gender == 'non_binary'    %}selected{% endif %}>Non-binary</option>
+                        <option value="self_describe" {% if student_profile.gender == 'self_describe' %}selected{% endif %}>Prefer to self-describe</option>
+                        <option value="prefer_not"    {% if student_profile.gender == 'prefer_not'    %}selected{% endif %}>Prefer not to say</option>
+                      </select>
+                    </div>
+                    <div class="field-group">
+                      <label class="field-label">Residency Status</label>
+                      <select id="ediResidency" class="field-input">
+                        <option value="">Prefer not to answer</option>
+                        <option value="citizen"            {% if student_profile.residency_status == 'citizen'            %}selected{% endif %}>Canadian Citizen</option>
+                        <option value="permanent_resident" {% if student_profile.residency_status == 'permanent_resident' %}selected{% endif %}>Permanent Resident</option>
+                        <option value="international"      {% if student_profile.residency_status == 'international'      %}selected{% endif %}>International Student</option>
+                        <option value="prefer_not"         {% if student_profile.residency_status == 'prefer_not'         %}selected{% endif %}>Prefer not to say</option>
+                      </select>
+                    </div>
+                  </div>
+                  <div class="field-row full">
+                    <div class="field-group">
+                      <label class="field-label">Indigenous Identity</label>
+                      <select id="ediIndigenous" class="field-input">
+                        <option value="">Prefer not to answer</option>
+                        <option value="yes"        {% if student_profile.indigenous_identity == 'yes'        %}selected{% endif %}>Yes — First Nations, Métis, or Inuit</option>
+                        <option value="no"         {% if student_profile.indigenous_identity == 'no'         %}selected{% endif %}>No</option>
+                        <option value="prefer_not" {% if student_profile.indigenous_identity == 'prefer_not' %}selected{% endif %}>Prefer not to say</option>
+                      </select>
+                    </div>
+                  </div>
+                  <div class="field-row full">
+                    <div class="field-group">
+                      <label class="field-label">Race / Ethnicity</label>
+                      <select id="ediRaceEthnicity" class="field-input">
+                        <option value="">Prefer not to answer</option>
+                        <option value="white"           {% if student_profile.race_ethnicity == 'white'           %}selected{% endif %}>White / European descent</option>
+                        <option value="black"           {% if student_profile.race_ethnicity == 'black'           %}selected{% endif %}>Black / African descent</option>
+                        <option value="east_asian"      {% if student_profile.race_ethnicity == 'east_asian'      %}selected{% endif %}>East Asian</option>
+                        <option value="south_asian"     {% if student_profile.race_ethnicity == 'south_asian'     %}selected{% endif %}>South Asian</option>
+                        <option value="southeast_asian" {% if student_profile.race_ethnicity == 'southeast_asian' %}selected{% endif %}>Southeast Asian</option>
+                        <option value="latin"           {% if student_profile.race_ethnicity == 'latin'           %}selected{% endif %}>Latin American / Hispanic</option>
+                        <option value="middle_eastern"  {% if student_profile.race_ethnicity == 'middle_eastern'  %}selected{% endif %}>Middle Eastern / North African</option>
+                        <option value="indigenous"      {% if student_profile.race_ethnicity == 'indigenous'      %}selected{% endif %}>Indigenous (other than First Nations/Métis/Inuit)</option>
+                        <option value="mixed"           {% if student_profile.race_ethnicity == 'mixed'           %}selected{% endif %}>Two or more ethnicities</option>
+                        <option value="other"           {% if student_profile.race_ethnicity == 'other'           %}selected{% endif %}>Other</option>
+                        <option value="prefer_not"      {% if student_profile.race_ethnicity == 'prefer_not'      %}selected{% endif %}>Prefer not to say</option>
+                      </select>
+                    </div>
+                  </div>
+                  <button class="btn-save-profile" onclick="saveEdiProfile()">
+                    <i class="bi bi-check2"></i> Save EDI Profile
+                  </button>
+                </div>
+              </div>
+              {% endif %}
+
+            </div>
+
+            <!-- ═══ RIGHT COLUMN — STUDENT ═══ -->
+            {% if request.user.user_type == 'student' and student_profile %}
+            <div class="right-column">
+
+              <!-- Privacy & Consent -->
+              <div class="profile-card">
+                <div class="profile-card-header">
+                  <i class="bi bi-lock-fill"></i>
+                  <h2>Privacy &amp; Consent</h2>
+                </div>
+                <div class="profile-card-body">
+                  <div class="consent-row">
+                    <div class="consent-row-info">
+                      <h4>Share data for EDI reporting</h4>
+                      <br>
+                      <p>Allows your anonymized conference and activity counts to be included in equity reports sent to People &amp; Culture. No names or identifying information are ever shared.</p>
+                    </div>
+                    <label class="toggle-switch" style="margin-left:20px;">
+                      <input type="checkbox" id="consentToggle"
+                             {% if request.user.consent_to_share %}checked{% endif %}
+                             onchange="saveConsent(this.checked)">
+                      <span class="toggle-slider"></span>
+                    </label>
+                  </div>
+                </div>
+              </div>
+
+              <!-- 2FA -->
+              <div class="profile-card">
+                <div class="profile-card-header">
+                  <i class="bi bi-shield-lock"></i>
+                  <h2>Two-Factor Authentication</h2>
+                </div>
+                <div class="profile-card-body">
+                  <p style="color:#166534;font-weight:600;margin-bottom:12px;">
+                    <i class="bi bi-check2"></i> 2FA is enabled on your account.
+                  </p>
+                  <div style="background:#f8f9fb;border:1px solid var(--border);border-radius:8px;
+                              padding:12px;font-size:13px;color:var(--muted);">
+                    <i class="bi bi-info-circle" style="color:var(--red);margin-right:4px;"></i>
+                    If you have lost access to your authenticator app or backup codes,
+                    please contact your administrator to reset your 2FA.
+                  </div>
+                </div>
+                <br>
+              </div>
+
+            </div>
+            {% endif %}
+
+            <!-- ═══ RIGHT COLUMN — RESEARCHER ═══ -->
+            {% if request.user.user_type == 'researcher' %}
+            <div class="right-column">
+
+              <!-- Current Students -->
+              {% if current_students %}
+              <div class="profile-card">
+                <div class="profile-card-header">
+                  <i class="bi bi-people"></i>
+                  <h2>Current Students
+                    <span style="font-size:14px;font-weight:500;color:#999;margin-left:8px;">
+                      ({{ current_students|length }})
+                    </span>
+                  </h2>
+                </div>
+                <div class="profile-card-body">
+                  <div class="education-list">
+                    {% for s in current_students %}
+                    <div class="education-item sup-item" id="sup-{{ s.id }}"
+                         {% if forloop.counter > 3 %}style="display:none;"{% endif %}>
+                      <div style="display:flex;justify-content:space-between;align-items:flex-start;">
+                        <div>
+                          <div class="education-degree">{{ s.student_name }}</div>
+                          {% if s.degree_type %}
+                          <div class="education-meta sup-degree-display">{{ s.get_degree_type_display }}</div>
+                          {% endif %}
+                          {% if s.supervision_role %}
+                          <div class="education-meta" style="color:#999;">{{ s.supervision_role }}</div>
+                          {% endif %}
+                          {% if s.institution %}
+                          <div class="education-meta" style="color:#999;">{{ s.institution }}</div>
+                          {% endif %}
+                          <div class="education-dates">
+                            {% if s.start_date %}Started {{ s.start_date }}{% endif %}
+                            <span class="sup-expected-display">{% if s.expected_date %} · Expected {{ s.expected_date }}{% endif %}</span>
+                          </div>
+                          {% if s.department %}
+                          <div class="education-meta sup-dept-display" style="color:#999;">{{ s.department }}</div>
+                          {% elif s.linked_student and s.linked_student.department %}
+                          <div class="education-meta sup-dept-display" style="color:#bbb;font-style:italic;">{{ s.linked_student.department }} <span style="font-size:12px;">(from student profile)</span></div>
+                          {% else %}
+                          <div class="education-meta sup-dept-display" style="color:#ccc;font-style:italic;">No department set</div>
+                          {% endif %}
+                          {% if s.thesis_title and s.thesis_title != "N/A" %}
+                          <div class="education-meta" style="font-style:italic;margin-top:6px;">"{{ s.thesis_title }}"</div>
+                          {% endif %}
+                        </div>
+                        <button onclick="openSupEdit({{ s.id }})"
+                                style="background:none;border:1px solid #e8eaed;border-radius:8px;padding:6px 12px;
+                                       font-size:13px;color:#6b7280;cursor:pointer;white-space:nowrap;flex-shrink:0;">
+                          <i class="bi bi-pencil"></i> Edit
+                        </button>
+                      </div>
+                      <!-- Inline edit form -->
+                      <div id="sup-edit-{{ s.id }}" style="display:none;margin-top:16px;padding-top:16px;border-top:1px solid #f0f0f0;">
+                        <div class="field-row">
+                          <div class="field-group">
+                            <label class="field-label">Department</label>
+                            <input type="text" id="sup-dept-{{ s.id }}" class="field-input"
+                                   value="{{ s.department|default:'' }}" placeholder="e.g. Electrical Engineering">
+                          </div>
+                          <div class="field-group">
+                            <label class="field-label">Expected Graduation</label>
+                            <input type="date" id="sup-expected-{{ s.id }}" class="field-input"
+                                   value="{{ s.expected_date|date:'Y-m-d'|default:'' }}">
+                          </div>
+                        </div>
+                        <div class="field-row">
+                          <div class="field-group">
+                            <label class="field-label">Degree Type</label>
+                            <select id="sup-degree-{{ s.id }}" class="field-input">
+                              <option value="">— Select —</option>
+                              <option value="bachelors"          {% if s.degree_type == 'bachelors'          %}selected{% endif %}>Bachelor's</option>
+                              <option value="masters_thesis"     {% if s.degree_type == 'masters_thesis'     %}selected{% endif %}>Master's Thesis</option>
+                              <option value="masters_non_thesis" {% if s.degree_type == 'masters_non_thesis' %}selected{% endif %}>Master's Non-Thesis</option>
+                              <option value="doctorate"          {% if s.degree_type == 'doctorate'          %}selected{% endif %}>Doctorate</option>
+                              <option value="postdoc"            {% if s.degree_type == 'postdoc'            %}selected{% endif %}>Post-doctorate</option>
+                              <option value="research_associate" {% if s.degree_type == 'research_associate' %}selected{% endif %}>Research Associate</option>
+                            </select>
+                          </div>
+                          <div class="field-group">
+                            <label class="field-label">Status</label>
+                            <select id="sup-status-{{ s.id }}" class="field-input">
+                              <option value="in_progress" {% if s.status == 'in_progress' %}selected{% endif %}>In Progress</option>
+                              <option value="completed"   {% if s.status == 'completed'   %}selected{% endif %}>Completed</option>
+                            </select>
+                          </div>
+                        </div>
+                        <div class="field-row full">
+                          <div class="field-group">
+                            <label class="field-label">
+                              Linked RIMS Student
+                              <span style="font-weight:400;color:#999;font-size:13px;margin-left:4px;">
+                                — leave blank if not registered
+                              </span>
+                            </label>
+                            <select id="sup-linked-{{ s.id }}" class="field-input">
+                              <option value="">— Not linked —</option>
+                              {% for sp in all_students %}
+                              <option value="{{ sp.id }}"
+                                {% if s.linked_student_id == sp.id %}selected{% endif %}
+                                {% if sp.id in linked_student_ids and s.linked_student_id != sp.id %}disabled{% endif %}>
+                                {{ sp.user.get_full_name }} ({{ sp.get_degree_level_display|default:"—" }})
+                                {% if sp.id in linked_student_ids and s.linked_student_id != sp.id %} — already linked{% endif %}
+                              </option>
+                              {% endfor %}
+                            </select>
+                            {% if s.linked_student %}
+                            <div style="font-size:13px;color:#166534;margin-top:4px;">
+                              <i class="bi bi-check2-circle-fill"></i>
+                              Auto-linked to {{ s.linked_student.user.get_full_name }}
+                            </div>
+                            {% endif %}
+                          </div>
+                        </div>
+                        <div style="display:flex;gap:10px">
+                          <button class="btn-save-profile" style="padding:10px 20px;font-size:14px;"
+                                  onclick="saveSupRecord({{ s.id }})">
+                            <i class="bi bi-check2"></i> Save
+                          </button>
+                          <button onclick="closeSupEdit({{ s.id }})" class="btn-edi-skip"
+                                  style="padding:10px 20px;font-size:14px;margin-top:16px;">
+                            Cancel
+                          </button>
+                        </div>
+                        <p id="sup-status-msg-{{ s.id }}" style="font-size:13px;margin-top:8px;"></p>
+                      </div>
+                    </div>
+                    {% endfor %}
+                  </div>
+                  {% if current_students|length > 3 %}
+                  <button onclick="toggleSupStudents(this)" class="btn-edi-skip"
+                          style="margin-top:12px;width:100%;justify-content:center;">
+                    <i class="bi bi-chevron-down" id="supChevron"></i>
+                    Show all {{ current_students|length }} students
+                  </button>
+                  {% endif %}
+                  <p class="education-note" style="font-size:13px;color:rgb(107, 114, 128)">
+                    <i class="bi bi-info-circle"></i> Synced from CCV · Department and expected date editable
+                  </p>
+                </div>
+              </div>
+              {% endif %}
+
+              <!-- 2FA -->
+              <div class="profile-card">
+                <div class="profile-card-header">
+                  <i class="bi bi-shield-lock"></i>
+                  <h2>Two-Factor Authentication</h2>
+                </div>
+                <div class="profile-card-body">
+                  <p style="color:#166534;font-weight:600;margin-bottom:12px;">
+                    <i class="bi bi-check2"></i> 2FA is enabled on your account.
+                  </p>
+                  <div style="background:#f8f9fb;border:1px solid var(--border);border-radius:8px;
+                              padding:12px;font-size:13px;color:var(--muted);">
+                    <i class="bi bi-info-circle" style="color:var(--red);margin-right:4px;"></i>
+                    If you have lost access to your authenticator app or backup codes,
+                    please contact your administrator to reset your 2FA.
+                  </div>
+                </div>
+                <br>
+              </div>
+
+            </div>
+            {% endif %}
+
+            <!-- ═══ RIGHT COLUMN — ADMIN ═══ -->
+            {% if request.user.user_type == 'admin' %}
+            <div class="right-column">
+
+              <!-- 2FA -->
+              <div class="profile-card">
+                <div class="profile-card-header">
+                  <i class="bi bi-shield-lock"></i>
+                  <h2>Two-Factor Authentication</h2>
+                </div>
+                <div class="profile-card-body">
+                  <p style="color:#166534;font-weight:600;margin-bottom:12px;">
+                    <i class="bi bi-check2"></i> 2FA is enabled on your account.
+                  </p>
+                  <div style="background:#f8f9fb;border:1px solid var(--border);border-radius:8px;
+                              padding:12px;font-size:13px;color:var(--muted);">
+                    <i class="bi bi-info-circle" style="color:var(--red);margin-right:4px;"></i>
+                    If you have lost access to your authenticator app or backup codes,
+                    please contact your administrator to reset your 2FA.
+                  </div>
+                </div>
+                <br>
+              </div>
+
+            </div>
+            {% endif %}
+
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- PRIMARY SUPERVISOR MODAL -->
+    <div id="supervisorModal">
+      <div style="background:#fff;border-radius:12px;padding:30px;width:420px">
+        <h3 style="margin-bottom:20px">Request Supervisor</h3>
+        <select id="supervisorSelect">
+          <option value="">Select supervisor</option>
+          {% for r in researchers %}
+            <option value="{{ r.id }}">{{ r.user.get_full_name }}</option>
+          {% endfor %}
+        </select>
+        <div style="margin-top:20px;display:flex;gap:10px">
+          <button class="btn-save-profile" onclick="sendSupervisorRequest()">Send Request</button>
+          <button onclick="closeSupervisorModal()" class="btn-edi-skip">Cancel</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- CO-SUPERVISOR MODAL -->
+    <div id="coSupervisorModal">
+      <div style="background:#fff;border-radius:12px;padding:30px;width:420px">
+        <h3 style="margin-bottom:8px">Add Co-Supervisor</h3>
+        <p style="font-size:14px;color:#6b7280;margin:0 0 20px;">Added instantly — no approval needed.</p>
+        <select id="coSupervisorSelect">
+          <option value="">Select co-supervisor</option>
+          {% for r in researchers %}
+            {% if r != student_profile.supervisor %}
+            <option value="{{ r.id }}">{{ r.user.get_full_name }}</option>
+            {% endif %}
+          {% endfor %}
+        </select>
+        <div style="margin-top:20px;display:flex;gap:10px">
+          <button class="btn-save-profile" onclick="sendCoSupervisorRequest()">
+            <i class="bi bi-plus"></i> Add
+          </button>
+          <button onclick="closeCoSupervisorModal()" class="btn-edi-skip">Cancel</button>
+        </div>
+      </div>
+    </div>
+
+    <script src="{% static 'js/dashboard.js' %}"></script>
+    <script src="{% static 'js/profile.js' %}"></script>
+  </body>
+</html>

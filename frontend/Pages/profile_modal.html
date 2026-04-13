@@ -1,0 +1,435 @@
+<!-- Profile Modal -->
+<div id="profileModal" class="profile-modal">
+  <div class="profile-overlay" onclick="closeProfileModal()"></div>
+
+  <div class="profile-panel">
+
+    <!-- Header -->
+    <div class="profile-header">
+      <div class="profile-avatar">
+        <span>{{ user.first_name|first }}{{ user.last_name|first }}</span>
+      </div>
+      <div class="profile-user-info">
+        <h2>{{ user.first_name }} {{ user.last_name }}</h2>
+        <p class="profile-email">{{ user.email }}</p>
+        <p class="profile-role">{{ user.user_type|title }}</p>
+      </div>
+      <button class="profile-close" onclick="closeProfileModal()">
+        <i class="bi bi-x-lg"></i>
+      </button>
+    </div>
+
+    <div class="profile-content">
+
+      <!-- ══════════════════════════════════════════ -->
+      <!-- ADMIN VIEW — Pending Activities            -->
+      <!-- ══════════════════════════════════════════ -->
+      {% if user.user_type == 'admin' %}
+
+      <div class="profile-section">
+        <h3 class="profile-section-title">
+          Pending Student Activities
+          <span id="modalPendingCount" class="pending-count-badge" style="display:none;"></span>
+        </h3>
+        <div id="modalPendingList">
+          <p class="empty-msg">Loading...</p>
+        </div>
+      </div>
+
+      <!-- ══════════════════════════════════════════ -->
+      <!-- RESEARCHER VIEW                            -->
+      <!-- ══════════════════════════════════════════ -->
+      {% elif user.user_type == 'researcher' and researcher %}
+
+      {% if researcher.title or researcher.language or researcher.residency_status %}
+      <div class="profile-section">
+        <h3 class="profile-section-title">Profile Info</h3>
+        <div class="profile-info-grid">
+          {% if researcher.title %}
+          <div class="profile-info-item">
+            <span class="info-label">Title</span>
+            <span class="info-value">{{ researcher.title }}</span>
+          </div>
+          {% endif %}
+          {% if researcher.language %}
+          <div class="profile-info-item">
+            <span class="info-label">Language</span>
+            <span class="info-value">{{ researcher.language }}</span>
+          </div>
+          {% endif %}
+          {% if researcher.residency_status %}
+          <div class="profile-info-item">
+            <span class="info-label">Residency</span>
+            <span class="info-value">{{ researcher.residency_status }}</span>
+          </div>
+          {% endif %}
+          {% if researcher.ccv_identifier %}
+          <div class="profile-info-item">
+            <span class="info-label">CCV ID</span>
+            <span class="info-value">{{ researcher.ccv_identifier }}</span>
+          </div>
+          {% endif %}
+        </div>
+      </div>
+      {% endif %}
+
+      {% if education_records %}
+      <div class="profile-section">
+        <h3 class="profile-section-title">Education</h3>
+        <div class="profile-education">
+          {% for edu in education_records %}
+          <div class="education-item">
+            <div class="education-icon">
+              <i class="bi bi-mortarboard"></i>
+            </div>
+            <div class="education-details">
+              <h4>{{ edu.degree_type }}</h4>
+              {% if edu.specialization %}<p>{{ edu.specialization }}</p>{% endif %}
+              <p class="education-institution">{{ edu.institution }}</p>
+              {% if edu.expected_date %}<p class="education-date">{{ edu.expected_date }}</p>{% endif %}
+            </div>
+          </div>
+          {% endfor %}
+        </div>
+      </div>
+      {% endif %}
+
+      {% if all_award_records %}
+      <div class="profile-section">
+        <h3 class="profile-section-title">Awards & Recognition</h3>
+        <div class="profile-awards">
+          {% for award in all_award_records %}
+          <div class="award-item-profile">
+            <div class="award-icon">
+              <i class="bi bi-award"></i>
+            </div>
+            <div class="award-details">
+              <h4>{{ award.name }}</h4>
+              {% if award.organization %}<p>{{ award.organization }}</p>{% endif %}
+              {% if award.start_date %}<p class="award-date">{{ award.start_date }}</p>{% endif %}
+            </div>
+          </div>
+          {% endfor %}
+        </div>
+      </div>
+      {% endif %}
+
+      <div class="profile-section">
+        <h3 class="profile-section-title">Quick Links</h3>
+        <div class="profile-links">
+          <a href="/publications/" class="profile-link" onclick="closeProfileModal()">
+            <i class="bi bi-file-earmark-text"></i>
+            <div>
+              <span class="link-label">Publications</span>
+              {% if researcher %}
+              <span class="link-count">{{ researcher.publications.count }} item{{ researcher.publications.count|pluralize }}</span>
+              {% endif %}
+            </div>
+          </a>
+          <a href="/activities/" class="profile-link" onclick="closeProfileModal()">
+            <i class="bi bi-calendar-event"></i>
+            <div>
+              <span class="link-label">Activities</span>
+              {% if researcher %}
+              <span class="link-count">{{ researcher.activity_set.count }} item{{ researcher.activity_set.count|pluralize }}</span>
+              {% endif %}
+            </div>
+          </a>
+          <a href="/projects/" class="profile-link" onclick="closeProfileModal()">
+            <i class="bi bi-briefcase"></i>
+            <div>
+              <span class="link-label">Projects</span>
+              {% if researcher %}
+              <span class="link-count">{{ researcher.projects.count }} item{{ researcher.projects.count|pluralize }}</span>
+              {% endif %}
+            </div>
+          </a>
+          <a href="/view_reports/" class="profile-link" onclick="closeProfileModal()">
+            <i class="bi bi-file-text"></i>
+            <div>
+              <span class="link-label">Reports</span>
+              {% if researcher %}
+              <span class="link-count">{{ researcher.report_set.count }} item{{ researcher.report_set.count|pluralize }}</span>
+              {% endif %}
+            </div>
+          </a>
+        </div>
+      </div>
+
+      <!-- ══════════════════════════════════════════ -->
+      <!-- STUDENT VIEW                               -->
+      <!-- ══════════════════════════════════════════ -->
+      {% elif user.user_type == 'student' and student_profile %}
+
+      <div class="profile-section">
+        <h3 class="profile-section-title">Academic Info</h3>
+        <div class="profile-info-grid">
+          {% if student_profile.degree_level %}
+          <div class="profile-info-item">
+            <span class="info-label">Degree</span>
+            <span class="info-value">{{ student_profile.degree_label }}</span>
+          </div>
+          {% endif %}
+          {% if student_profile.department %}
+          <div class="profile-info-item">
+            <span class="info-label">Department</span>
+            <span class="info-value">{{ student_profile.department }}</span>
+          </div>
+          {% endif %}
+          {% if student_profile.start_date %}
+          <div class="profile-info-item">
+            <span class="info-label">Start Date</span>
+            <span class="info-value">{{ student_profile.start_date }}</span>
+          </div>
+          {% endif %}
+          {% if student_profile.expected_end_date %}
+          <div class="profile-info-item">
+            <span class="info-label">Expected End</span>
+            <span class="info-value">{{ student_profile.expected_end_date }}</span>
+          </div>
+          {% endif %}
+          {% if student_profile.graduation_date %}
+          <div class="profile-info-item">
+            <span class="info-label">Graduated</span>
+            <span class="info-value">{{ student_profile.graduation_date }}</span>
+          </div>
+          {% endif %}
+          {% if student_profile.thesis_title %}
+          <div class="profile-info-item" style="grid-column: span 2;">
+            <span class="info-label">Thesis</span>
+            <span class="info-value">{{ student_profile.thesis_title }}</span>
+          </div>
+          {% endif %}
+        </div>
+      </div>
+
+      {% if student_profile.supervisor %}
+      <div class="profile-section">
+        <h3 class="profile-section-title">Supervision</h3>
+        <div class="profile-info-grid">
+          <div class="profile-info-item">
+            <span class="info-label">Supervisor</span>
+            <span class="info-value">{{ student_profile.supervisor.user.get_full_name }}</span>
+          </div>
+          {% if student_profile.co_supervisors.exists %}
+          <div class="profile-info-item">
+            <span class="info-label">Co-Supervisor(s)</span>
+            <span class="info-value">
+              {% for co in student_profile.co_supervisors.all %}
+                {{ co.user.get_full_name }}{% if not forloop.last %}, {% endif %}
+              {% endfor %}
+            </span>
+          </div>
+          {% endif %}
+        </div>
+      </div>
+      {% endif %}
+
+      {% if student_education %}
+      <div class="profile-section">
+        <h3 class="profile-section-title">Education History</h3>
+        <div class="profile-education">
+          {% for edu in student_education %}
+          <div class="education-item">
+            <div class="education-icon">
+              <i class="bi bi-mortarboard"></i>
+            </div>
+            <div class="education-details">
+              <h4>
+                {{ edu.degree_type }}
+                {% if edu.expected_date and edu.expected_date >= today %}
+                <span style="font-size:11px;font-weight:700;background:#dcfce7;color:#166534;
+                            padding:2px 8px;border-radius:4px;margin-left:6px;">Current</span>
+                {% endif %}
+              </h4>
+              {% if edu.specialization %}<p>{{ edu.specialization }}</p>{% endif %}
+              <p class="education-institution">{{ edu.institution }}</p>
+              {% if edu.start_date or edu.expected_date %}
+              <p class="education-date">
+                {% if edu.start_date %}{{ edu.start_date|date:"Y" }}{% endif %}
+                {% if edu.start_date and edu.expected_date %} – {% endif %}
+                {% if edu.expected_date %}{{ edu.expected_date|date:"Y" }}{% endif %}
+              </p>
+              {% endif %}
+            </div>
+          </div>
+          {% endfor %}
+        </div>
+      </div>
+      {% endif %}
+
+      {% if researcher %}
+      {% with awards=researcher.recognition_set.all %}
+      {% if awards %}
+      <div class="profile-section">
+        <h3 class="profile-section-title">Awards & Recognition</h3>
+        <div class="profile-awards">
+          {% for award in awards %}
+          <div class="award-item-profile">
+            <div class="award-icon">
+              <i class="bi bi-award"></i>
+            </div>
+            <div class="award-details">
+              <h4>{{ award.name }}</h4>
+              {% if award.organization %}<p>{{ award.organization }}</p>{% endif %}
+              {% if award.amount %}<p>${{ award.amount|floatformat:0 }}</p>{% endif %}
+              {% if award.start_date %}<p class="award-date">{{ award.start_date }}</p>{% endif %}
+            </div>
+          </div>
+          {% endfor %}
+        </div>
+      </div>
+      {% endif %}
+      {% endwith %}
+      {% endif %}
+
+      <div class="profile-section">
+        <h3 class="profile-section-title">Quick Links</h3>
+        <div class="profile-links">
+         <a href="/publications/" class="profile-link" onclick="closeProfileModal()">
+          <i class="bi bi-file-earmark-text"></i>
+          <div>
+            <span class="link-label">Publications</span>
+            {% if researcher %}
+            <span class="link-count">{{ researcher.publications.count }} item{{ researcher.publications.count|pluralize }}</span>
+            {% endif %}
+          </div>
+        </a>
+        <a href="/activities/" class="profile-link" onclick="closeProfileModal()">
+          <i class="bi bi-calendar-event"></i>
+          <div>
+            <span class="link-label">Activities</span>
+            {% if researcher %}
+            <span class="link-count">{{ researcher.activity_set.count }} item{{ researcher.activity_set.count|pluralize }}</span>
+            {% endif %}
+          </div>
+        </a>
+        <a href="/profile/" class="profile-link" onclick="closeProfileModal()">
+          <i class="bi bi-person-gear"></i>
+          <div>
+            <span class="link-label">Edit Profile</span>
+          </div>
+        </a>
+        </div>
+      </div>
+
+      {% else %}
+      <div class="profile-empty">
+        <i class="bi bi-person-lines-fill"></i>
+        <p>No research profile found.<br>Upload your CCV to populate your profile.</p>
+      </div>
+      {% endif %}
+
+      <!-- Logout — shown for all user types -->
+      <div class="profile-section profile-section-footer">
+        <a href="{% url 'logout' %}" class="profile-logout-btn">
+          <i class="bi bi-box-arrow-right"></i> Sign Out
+        </a>
+      </div>
+
+    </div>
+  </div>
+</div>
+
+{% if user.user_type == 'admin' %}
+<script>
+function escHtml(str) {
+  return String(str || '')
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#39;');
+}
+
+function loadModalPendingActivities() {
+  fetch('/api/admin/pending-activities/')
+    .then(r => r.json())
+    .then(data => {
+      const list       = document.getElementById('modalPendingList');
+      const badge      = document.getElementById('modalPendingCount');
+      const bellBadge  = document.getElementById('adminBellBadge');
+      const activities = data.activities || [];
+
+      if (bellBadge) {
+        bellBadge.style.display = activities.length > 0 ? 'block' : 'none';
+      }
+
+      if (activities.length === 0) {
+        list.innerHTML      = '<p class="empty-msg">No pending activities.</p>';
+        badge.style.display = 'none';
+        return;
+      }
+
+      badge.textContent   = activities.length;
+      badge.style.display = 'inline-block';
+
+      list.innerHTML = activities.map(a => `
+        <div class="pending-activity-card" id="modal-pending-${a.activity_id}">
+          <h4 class="pending-activity-title">${escHtml(a.title)}</h4>
+          <p class="pending-meta">
+            ${escHtml(a.type)} &bull; ${escHtml(a.date)} &bull;
+            <strong>${escHtml(a.student)}</strong>
+            <span class="pending-email">(${escHtml(a.student_email)})</span>
+          </p>
+          ${a.location    ? `<p class="pending-desc"><i class="bi bi-geo-alt"></i> ${escHtml(a.location)}</p>` : ''}
+          ${a.invited     ? `<p class="pending-desc"><i class="bi bi-person-check"></i> Invited Speaker</p>` : ''}
+          ${a.keynote     ? `<p class="pending-desc"><i class="bi bi-star"></i> Keynote</p>` : ''}
+          ${a.description ? `<p class="pending-desc">${escHtml(a.description)}</p>` : ''}
+          ${a.tagged_users?.length ? `<p class="pending-desc"><i class="bi bi-tag"></i> Tagged: ${escHtml(a.tagged_users.join(', '))}</p>` : ''}
+          <p class="pending-submitted">Submitted: ${escHtml(a.submitted)}</p>
+          <div class="pending-activity-actions">
+            <button class="btn-approve" onclick="modalReviewActivity(${a.activity_id}, 'approve')">
+              <i class="bi bi-check-circle"></i> Approve
+            </button>
+            <div class="reject-group">
+              <input type="text" id="modal-reason-${a.activity_id}"
+                    placeholder="Rejection reason (optional)..."
+                    class="reject-reason-input">
+              <button class="btn-reject" onclick="modalReviewActivity(${a.activity_id}, 'reject')">
+                <i class="bi bi-x-circle"></i> Reject
+              </button>
+            </div>
+          </div>
+        </div>
+      `).join('');
+    })
+    .catch(() => {
+      document.getElementById('modalPendingList').innerHTML =
+        '<p class="empty-msg">Error loading activities.</p>';
+    });
+}
+
+function modalReviewActivity(activityId, action) {
+  const reason = document.getElementById(`modal-reason-${activityId}`)?.value || '';
+  const csrf   = document.querySelector('[name=csrfmiddlewaretoken]')?.value;
+
+  fetch(`/api/activities/${activityId}/review/`, {
+    method:  'POST',
+    headers: { 'Content-Type': 'application/json', 'X-CSRFToken': csrf },
+    body:    JSON.stringify({ action, reason })
+  })
+  .then(r => r.json())
+  .then(data => {
+    if (data.success) {
+      document.getElementById(`modal-pending-${activityId}`)?.remove();
+      const list = document.getElementById('modalPendingList');
+      if (!list.querySelector('.pending-activity-card')) {
+        list.innerHTML = '<p class="empty-msg">No pending activities.</p>';
+        document.getElementById('modalPendingCount').style.display  = 'none';
+        const bellBadge = document.getElementById('adminBellBadge');
+        if (bellBadge) bellBadge.style.display = 'none';
+      } else {
+        const remaining = list.querySelectorAll('.pending-activity-card').length;
+        document.getElementById('modalPendingCount').textContent = remaining;
+      }
+    } else {
+      alert(data.error || 'Error processing review');
+    }
+  });
+}
+
+document.addEventListener('DOMContentLoaded', loadModalPendingActivities);
+setInterval(loadModalPendingActivities, 60000);
+</script>
+{% endif %}

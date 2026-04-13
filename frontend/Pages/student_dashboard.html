@@ -1,0 +1,432 @@
+{% load static %}
+{% load humanize %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Student Dashboard</title>
+  <link rel="icon" href="{% static 'assets/IBE-logo.png' %}">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css">
+  <link rel="stylesheet" href="{% static 'css/student_dashboard.css' %}">
+  <link rel="stylesheet" href="{% static 'css/profile_modal.css' %}">
+  <link rel="stylesheet" href="{% static 'css/dashboard.css' %}">
+  <style>
+    /* ── EDI Modal ─────────────────────────────────────────── */
+    .edi-overlay {
+      position: fixed; inset: 0; z-index: 1000;
+      background: rgba(0,0,0,0.45);
+      display: flex; align-items: center; justify-content: center;
+      padding: 20px;
+    }
+    .edi-modal {
+      background: #fff; border-radius: 16px; width: 100%; max-width: 720px;
+      box-shadow: 0 20px 60px rgba(0,0,0,0.2); overflow: hidden;
+      animation: ediSlideIn 0.3s ease;
+    }
+    @keyframes ediSlideIn {
+      from { opacity: 0; transform: translateY(20px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+    .edi-modal-header {
+      background: #C8102E; padding: 24px 28px;
+      display: flex; align-items: flex-start; gap: 14px;
+    }
+    .edi-modal-header i { font-size: 28px; color: #fff; flex-shrink: 0; margin-top: 2px; }
+    .edi-modal-header-text h2 { font-size: 22px; font-weight: 700; color: #fff; margin: 0 0 6px; }
+    .edi-modal-header-text p  { font-size: 18px; color: rgba(255,255,255,0.85); margin: 0; line-height: 1.5; }
+    .edi-modal-body { padding: 28px; }
+    .edi-modal-note {
+      background: #f8f9fb; border: 1px solid #e8eaed; border-radius: 10px;
+      padding: 12px 14px; font-size: 18px; color: #6b7280;
+      line-height: 1.6; margin-bottom: 22px;
+    }
+    .edi-modal-note i { color: #C8102E; margin-right: 4px; }
+    .edi-field-group { display: flex; flex-direction: column; gap: 8px; margin-bottom: 18px; }
+    .edi-field-label { font-size: 18px; font-weight: 700; color: #374151; }
+    .edi-select {
+      border: 1px solid #e8eaed; border-radius: 10px; padding: 12px 14px;
+      font-size: 18px; color: #1a1a2e; background: #fff; outline: none;
+      font-family: inherit; transition: border-color 0.2s; width: 100%;
+    }
+    .edi-select:focus { border-color: #C8102E; box-shadow: 0 0 0 3px rgba(200,16,46,0.08); }
+    .edi-modal-footer {
+      padding: 0 28px 28px;
+      display: flex; gap: 12px; justify-content: flex-end;
+    }
+    .btn-edi-skip {
+      background: none; border: 1px solid #e8eaed; border-radius: 10px;
+      padding: 12px 20px; font-size: 18px; font-weight: 600;
+      color: #6b7280; cursor: pointer; font-family: inherit; transition: all 0.2s;
+    }
+    .btn-edi-skip:hover { border-color: #C8102E; color: #C8102E; }
+    .btn-edi-save {
+      background: #C8102E; border: none; border-radius: 10px;
+      padding: 12px 24px; font-size: 18px; font-weight: 700;
+      color: #fff; cursor: pointer; font-family: inherit;
+      transition: background 0.2s; display: flex; align-items: center; gap: 6px;
+    }
+    .btn-edi-save:hover { background: #9e0c24; }
+  </style>
+</head>
+<body data-user-type="student">
+  <div class="dashboard-layout">
+    {% include "./sidebar.html" %}
+    <div class="dashboard-main">
+
+      <!-- Top bar -->
+      <div class="dashboard-topbar" style="cursor: pointer;" onclick="openProfileModal()">
+        <div class="user-avatar">
+          <span>{{ user.first_name|first }}{{ user.last_name|first }}</span>
+        </div>
+        <div class="user-details">
+          <h2>Hello, {{ user.first_name }}</h2>
+          <p class="user-email">{{ user.email }}</p>
+          <p class="user-role">
+            {% if student %}{{ student.get_degree_level_display }} Student{% else %}Student{% endif %}
+          </p>
+        </div>
+        {% if user.user_type == 'student' %}
+        <button class="notif-bell-btn" id="notificationBell" title="Notifications">
+          <i class="bi bi-bell-fill"></i>
+          <span class="notif-dot" id="notifDot" style="display:none;"></span>
+        </button>
+        {% endif %}
+      </div>
+
+      <!-- Profile card -->
+      {% if student %}
+      <h2 class="section-title" style="margin-top:24px;">Your Profile</h2>
+      <div class="student-profile-card">
+        <div class="profile-grid">
+          {% if student.degree_level %}
+          <div class="profile-item">
+            <span class="profile-label">Degree</span>
+            <span class="profile-value degree-badge degree-{{ student.degree_level }}">
+              {{ student.get_degree_level_display }}
+            </span>
+          </div>
+          {% endif %}
+          {% if student.department %}
+          <div class="profile-item">
+            <span class="profile-label">Department</span>
+            <span class="profile-value">{{ student.department }}</span>
+          </div>
+          {% endif %}
+          {% if student.supervisor %}
+          <div class="profile-item">
+            <span class="profile-label">Supervisor</span>
+            <span class="profile-value">
+              Dr. {{ student.supervisor.user.first_name }} {{ student.supervisor.user.last_name }}
+            </span>
+          </div>
+          {% endif %}
+          {% if student.start_date %}
+          <div class="profile-item">
+            <span class="profile-label">Start Date</span>
+            <span class="profile-value">{{ student.start_date }}</span>
+          </div>
+          {% endif %}
+          {% if student.expected_end_date %}
+          <div class="profile-item">
+            <span class="profile-label">Expected End</span>
+            <span class="profile-value">{{ student.expected_end_date }}</span>
+          </div>
+          {% endif %}
+          {% if student.thesis_title %}
+          <div class="profile-item full-width">
+            <span class="profile-label">Thesis / Project Title</span>
+            <span class="profile-value">{{ student.thesis_title }}</span>
+          </div>
+          {% endif %}
+        </div>
+      </div>
+      {% endif %}
+
+      <!-- My stats -->
+      <h2 class="section-title">My Activity</h2>
+      <div class="dashboard-stats">
+        <div class="stat-card">
+          <div class="stat-icon"><i class="bi bi-activity"></i></div>
+          <div class="stat-content">
+            <h3>{{ activity_count|default:0 }}</h3>
+            <p>Total Activities</p>
+          </div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-icon"><i class="bi bi-mic"></i></div>
+          <div class="stat-content">
+            <h3>{{ conference_count|default:0 }}</h3>
+            <p>Conferences</p>
+          </div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-icon"><i class="bi bi-megaphone"></i></div>
+          <div class="stat-content">
+            <h3>{{ km_count|default:0 }}</h3>
+            <p>KM Activities</p>
+          </div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-icon"><i class="bi bi-journal-text"></i></div>
+          <div class="stat-content">
+            <h3>{{ publication_count|default:0 }}</h3>
+            <p>Publications</p>
+          </div>
+        </div>
+      </div>
+
+      <!-- Peer activity -->
+      <h2 class="section-title">
+          Peer Conference Activity
+          <span class="section-subtitle">
+            {% if peer_supervisor %}
+              {{ peer_student_count }} peer{{ peer_student_count|pluralize }} under {{ peer_supervisor }} — anonymized
+            {% else %}
+              No supervisor assigned
+            {% endif %}
+          </span>
+        </h2>
+
+      {% if peer_stats_available %}
+      <div class="peer-activity-card">
+        <div class="peer-stats-row">
+          <div class="peer-stat">
+            <span class="peer-stat-number">{{ peer_conference_total }}</span>
+            <span class="peer-stat-label">Conferences attended (last 3 yrs)</span>
+          </div>
+          <div class="peer-stat">
+            <span class="peer-stat-number">{{ peer_km_total }}</span>
+            <span class="peer-stat-label">KM activities (last 3 yrs)</span>
+          </div>
+          {% if peer_student_count > 0 %}
+          <div class="peer-stat">
+            <span class="peer-stat-number">
+              {% widthratio peer_conference_total peer_student_count 1 %}
+            </span>
+            <span class="peer-stat-label">Avg conferences per student</span>
+          </div>
+          {% endif %}
+        </div>
+        {% if peer_by_year %}
+        <div class="peer-chart-wrap">
+          <canvas id="peerConferenceChart"></canvas>
+        </div>
+        {% endif %}
+      </div>
+      {% else %}
+      <div class="peer-activity-card peer-hidden">
+        <div class="peer-hidden-msg">
+          <i class="bi bi-shield-lock"></i>
+          <p>{{ peer_stats_hidden_reason }}</p>
+        </div>
+      </div>
+      {% endif %}
+
+      <!-- Two-Column: Activities + Publications -->
+      <div class="two-col-layout">
+
+        <!-- LEFT: Recent Activities -->
+        <div class="col-primary">
+          {% if recent_activities %}
+          <div class="col-header">
+            <h2 class="section-title">My Recent Activities</h2>
+            <a href="/activities/" class="view-all-link">View all <i class="bi bi-arrow-right"></i></a>
+          </div>
+          <div class="student-list">
+            {% for activity in recent_activities %}
+            <div class="student-list-item">
+              <div class="student-list-top">
+                <span class="activity-badge activity-{{ activity.activity_type }}">
+                  <span class="category-badge">{{ activity.get_category_display }}</span>
+                </span>
+                <span class="student-list-date">{{ activity.date|date:"M d, Y" }}</span>
+              </div>
+              <h4 class="student-list-title">{{ activity.title }}</h4>
+              {% if activity.description %}
+              <p class="student-list-desc">{{ activity.description }}</p>
+              {% endif %}
+            </div>
+            {% endfor %}
+          </div>
+          {% endif %}
+        </div>
+
+        <!-- RIGHT: Recent Publications -->
+        <div class="col-secondary">
+          {% if recent_publications %}
+          <div class="col-header">
+            <h2 class="section-title">My Recent Publications</h2>
+            <a href="/publications/" class="view-all-link">View all <i class="bi bi-arrow-right"></i></a>
+          </div>
+          <div class="student-list">
+            {% for pub in recent_publications %}
+            <div class="student-list-item">
+              <div class="student-list-top">
+                <span class="type-badge type-{{ pub.publication_type }}">{{ pub.get_publication_type_display }}</span>
+                <span class="student-list-date">{{ pub.publication_date|date:"Y" }}</span>
+              </div>
+              <h4 class="student-list-title">{{ pub.title }}</h4>
+              <p class="student-list-desc">{{ pub.authors }}</p>
+            </div>
+            {% endfor %}
+          </div>
+          {% endif %}
+        </div>
+      </div>
+
+      <!-- Upload CCV -->
+      <h2 class="section-title" style="margin-top:28px;">Update Your Profile</h2>
+      <div class="dashboard-cards">
+        <div class="dashboard-card">
+          <div class="card-header-row">
+            <i class="bi bi-file-earmark-xml card-icon"></i>
+            <div>
+              <h3>Upload CCV</h3>
+              <p>Upload your CCV XML to update your profile, activities, and publications.</p>
+              <div style="background:#fffbeb;border:1px solid #fcd34d;border-radius:8px;
+                    padding:10px 14px;font-size:13px;color:#92400e;margin-bottom:14px;">
+                <i class="bi bi-exclamation-triangle-fill" style="margin-right:6px;"></i>
+                Upload your own CCV only. This will overwrite your existing profile data.
+              </div>
+            </div>
+          </div>
+          <form id="ccvForm" enctype="multipart/form-data">
+            {% csrf_token %}
+            <label for="ccvFileInput" class="file-upload-label">
+              <i class="bi bi-file-earmark-xml"></i>
+              <span id="ccvFileLabel">Choose CCV XML file</span>
+            </label>
+            <input type="file" name="files" id="ccvFileInput" class="file-input-hidden" accept=".xml" required>
+            <button type="submit" class="upload-button">Upload & Merge</button>
+            <p id="ccvUploadStatus"></p>
+          </form>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- ── EDI Modal — shown on every login until completed ──── -->
+  {% if student and not student.edi_profile_completed %}
+  <div class="edi-overlay" id="ediOverlay">
+    <div class="edi-modal">
+      <div class="edi-modal-header">
+        <i class="bi bi-shield-check"></i>
+        <div class="edi-modal-header-text">
+          <h2>Help us support equity at IBME</h2>
+          <p>This takes less than a minute. Responses are voluntary, confidential, and only ever used in anonymous aggregated statistics.</p>
+        </div>
+      </div>
+      <div class="edi-modal-body">
+        <div class="edi-modal-note">
+          <i class="bi bi-info-circle"></i>
+          Your name is <strong>never</strong> included in any report. You can update your answers
+          anytime from your <a href="{% url 'profile' %}" style="color:#C8102E;">profile page</a>.
+        </div>
+        <div class="edi-field-group">
+          <label class="edi-field-label">Gender</label>
+          <select id="modalGender" class="edi-select">
+            <option value="">Prefer not to answer</option>
+            <option value="female">Female</option>
+            <option value="male">Male</option>
+            <option value="non_binary">Non-binary</option>
+            <option value="self_describe">Prefer to self-describe</option>
+            <option value="prefer_not">Prefer not to say</option>
+          </select>
+        </div>
+        <div class="edi-field-group">
+          <label class="edi-field-label">Residency Status</label>
+          <select id="modalResidency" class="edi-select">
+            <option value="">Prefer not to answer</option>
+            <option value="citizen">Canadian Citizen</option>
+            <option value="permanent_resident">Permanent Resident</option>
+            <option value="international">International Student</option>
+            <option value="prefer_not">Prefer not to say</option>
+          </select>
+        </div>
+        <div class="edi-field-group">
+          <label class="edi-field-label">Indigenous Identity</label>
+          <select id="modalIndigenous" class="edi-select">
+            <option value="">Prefer not to answer</option>
+            <option value="yes">Yes — First Nations, Métis, or Inuit</option>
+            <option value="no">No</option>
+            <option value="prefer_not">Prefer not to say</option>
+          </select>
+        </div>
+        <div class="edi-field-group">
+          <label class="edi-field-label">Race / Ethnicity</label>
+          <select id="modalRaceEthnicity" class="edi-select">
+            <option value="">Prefer not to answer</option>
+            <option value="white">White / European descent</option>
+            <option value="black">Black / African descent</option>
+            <option value="east_asian">East Asian</option>
+            <option value="south_asian">South Asian</option>
+            <option value="southeast_asian">Southeast Asian</option>
+            <option value="latin">Latin American / Hispanic</option>
+            <option value="middle_eastern">Middle Eastern / North African</option>
+            <option value="indigenous">Indigenous (other than First Nations/Métis/Inuit)</option>
+            <option value="mixed">Two or more ethnicities</option>
+            <option value="other">Other</option>
+            <option value="prefer_not">Prefer not to say</option>
+          </select>
+        </div>
+      </div>
+      <div class="edi-modal-footer">
+        <button class="btn-edi-skip" onclick="skipEdi()">Remind me later</button>
+        <button class="btn-edi-save" id="ediSaveBtn" onclick="saveEdi()">
+          <i class="bi bi-check2"></i> Save &amp; Continue
+        </button>
+      </div>
+    </div>
+  </div>
+  {% endif %}
+  {% include "./profile_modal.html" %}
+
+
+  <script src="{% static 'js/profile_modal.js' %}"></script>
+  <script>
+    window.peerByYear = {{ peer_by_year|safe }};
+
+    function saveEdi() {
+      const btn = document.getElementById('ediSaveBtn');
+      btn.disabled = true;
+      btn.innerHTML = '<i class="bi bi-hourglass-split"></i> Saving...';
+
+      fetch('/api/profile/update-edi/', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'X-CSRFToken': '{{ csrf_token }}',
+        },
+        body: JSON.stringify({
+          gender:              document.getElementById('modalGender').value,
+          residency_status:    document.getElementById('modalResidency').value,
+          indigenous_identity: document.getElementById('modalIndigenous').value,
+          race_ethnicity:      document.getElementById('modalRaceEthnicity').value,
+        }),
+      })
+      .then(r => r.json())
+      .then(d => {
+        if (d.success) {
+          document.getElementById('ediOverlay').style.display = 'none';
+        } else {
+          btn.disabled = false;
+          btn.innerHTML = '<i class="bi bi-check2"></i> Save & Continue';
+          alert(d.error || 'Something went wrong. Please try again.');
+        }
+      })
+      .catch(() => {
+        btn.disabled = false;
+        btn.innerHTML = '<i class="bi bi-check2"></i> Save & Continue';
+        alert('Network error. Please try again.');
+      });
+    }
+
+    function skipEdi() {
+      document.getElementById('ediOverlay').style.display = 'none';
+    }
+  </script>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <script src="{% static 'js/student_dashboard.js' %}"></script>
+</body>
+</html>

@@ -1,0 +1,677 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Add Project</title>
+  <link rel="icon" href="{% static 'assets/IBE-logo.png' %}">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600;700&display=swap">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css">
+  <link rel="stylesheet" href="{% static 'css/log_activity.css' %}">
+  <link rel="stylesheet" href="{% static 'css/dashboard.css' %}">
+  <style>
+    :root {
+      --red: #C8102E; --red-dark: #9e0c24; --red-pale: #fff5f6;
+      --ink: #1a1a2e; --muted: #6b7280; --border: #e5e7eb; --surface: #f9fafb;
+    }
+
+    .add-project-wrap {
+      max-width: 1500px;
+      padding: 32px 24px;
+    }
+
+    .page-header { margin-bottom: 28px; }
+    .page-header h2 { font-size: 32px; font-weight: 700; color: var(--ink); display: flex; align-items: center; gap: 10px; margin: 0 0 6px; }
+    .page-header h2 i { color: var(--red); }
+    .page-header p { color: var(--muted); font-size: 20px; margin: 0; }
+
+    /* ── Tab nav ─────────────────────────── */
+    .tab-nav {
+      display: flex; gap: 4px; margin-bottom: 0;
+      border-bottom: 2px solid var(--border);
+    }
+    .tab-nav-btn {
+      display: flex; align-items: center; gap: 8px;
+      padding: 12px 20px; border: none; background: none;
+      font-size: 20px; font-weight: 600; color: var(--muted);
+      cursor: pointer; border-bottom: 2px solid transparent;
+      margin-bottom: -2px; font-family: inherit; transition: all 0.15s;
+    }
+    .tab-nav-btn:hover { color: var(--red); }
+    .tab-nav-btn.active { color: var(--red); border-bottom-color: var(--red); }
+    .tab-nav-btn .tab-num {
+      width: 22px; height: 22px; border-radius: 50%;
+      background: #f3f4f6; color: var(--muted);
+      font-size: 20px; font-weight: 700;
+      display: flex; align-items: center; justify-content: center;
+      transition: all 0.15s;
+    }
+    .tab-nav-btn.active .tab-num { background: var(--red); color: #fff; }
+    .tab-nav-btn.done .tab-num { background: #059669; color: #fff; }
+
+    /* ── Tab panels ──────────────────────── */
+    .tab-body {
+      background: #fff; border: 1px solid var(--border);
+      border-top: none; border-radius: 14px;
+      padding: 28px 28px 24px; 
+    }
+    .tab-panel { display: none; }
+    .tab-panel.active { display: block; }
+
+    /* ── Form elements ───────────────────── */
+    .form-group { margin-bottom: 20px; height: 100px;}
+    .form-group label {
+      display: block; font-size: 20px; font-weight: 600;
+      color: var(--muted); margin-bottom: 8px;
+      text-transform: uppercase; letter-spacing: 0.3px;
+    }
+    .form-group label .opt {
+      font-weight: 400; color: #bbb; font-size: 20px;
+      text-transform: none; letter-spacing: 0;
+    }
+    .field-input {
+      width: 100%; border: 1px solid var(--border); border-radius: 10px;
+      padding: 11px 14px; font-size: 20px; font-family: inherit;
+      outline: none; transition: border-color 0.2s, box-shadow 0.2s;
+      box-sizing: border-box; background: #fff;
+    }
+    .field-input:focus { border-color: var(--red); box-shadow: 0 0 0 3px rgba(200,16,46,.08); }
+    textarea.field-input { resize: vertical; min-height: 90px; }
+
+    .form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+    @media (max-width: 600px) { .form-row { grid-template-columns: 1fr; } }
+
+    /* ── Role / status selectors ─────────── */
+    .type-selector { display: flex; gap: 8px; }
+    .type-btn {
+      display: inline-flex; align-items: center; gap: 6px;
+      width: 200px;
+      padding: 8px 14px; border: 1.5px solid var(--border);
+      border-radius: 8px; background: #fff; font-size: 20px;
+      font-weight: 600; color: var(--muted); cursor: pointer;
+      font-family: inherit; transition: all 0.15s;
+    }
+    .type-btn:hover { border-color: var(--red); color: var(--red); }
+    .type-btn.active { border-color: var(--red); background: var(--red-pale); color: var(--red); }
+
+    .toggle-group { display: flex; gap: 8px; flex-wrap: wrap; height: max-content; }
+    .toggle-btn {
+      padding: 8px 16px; border: 1.5px solid var(--border);
+      border-radius: 8px; background: #fff; font-size: 20px;
+      font-weight: 600; color: var(--muted); cursor: pointer;
+      font-family: inherit; transition: all 0.15s;
+    }
+    .toggle-btn:hover { border-color: var(--red); color: var(--red); }
+    .toggle-btn.active { border-color: var(--red); background: var(--red); color: #fff; }
+
+    /* ── People section ──────────────────── */
+    .people-split {
+      display: grid;
+      grid-template-columns: 6fr 1px 4fr;
+      gap: 0 24px;
+      align-items: start;
+    }
+    @media (max-width: 700px) { .people-split { grid-template-columns: 1fr; } }
+
+    .people-block h4 {
+      font-size: 20px; font-weight: 700; color: var(--ink);
+      text-transform: uppercase; letter-spacing: 0.4px;
+      margin: 0 0 6px; display: flex; align-items: center; gap: 7px;
+    }
+    .people-block h4 i { color: var(--red); }
+    .people-block p {
+      font-size: 17px; color: var(--muted); margin: 0 0 14px; line-height: 1.5;
+    }
+    .divider-v {
+      width: 1px;
+      background: var(--border);
+      align-self: stretch;
+      min-height: 200px;
+    }
+    @media (max-width: 700px) { .divider-v { display: none; } }
+
+    /* HQP tags */
+    .hqp-tags { display: flex; flex-wrap: wrap; gap: 7px; margin-top: 10px; min-height: 32px; }
+    .hqp-tag {
+      display: inline-flex; align-items: center; gap: 5px;
+      background: #fce7f3; color: #9d174d; border-radius: 20px;
+      padding: 4px 11px; font-size: 17px; font-weight: 600;
+    }
+    .hqp-tag span { cursor: pointer; opacity: 0.6; margin-left: 2px; }
+    .hqp-tag span:hover { opacity: 1; }
+
+    /* Member rows */
+    .member-row {
+      display: grid; grid-template-columns: 1fr 1fr 1fr auto;
+      gap: 8px; align-items: end; margin-bottom: 8px;
+      background: var(--surface); border: 1px solid var(--border);
+      border-radius: 10px; padding: 12px;
+    }
+    .member-row label {
+      font-size: 17px; font-weight: 600; color: var(--muted);
+      display: block; margin-bottom: 5px; text-transform: uppercase;
+    }
+    .member-row .field-input { padding: 8px 10px; font-size: 17px; }
+    .btn-remove {
+      background: #fee2e2; color: #991b1b; border: none;
+      border-radius: 8px; padding: 8px 10px; cursor: pointer; font-size: 17px;
+    }
+    .btn-add-member {
+      display: inline-flex; align-items: center; gap: 6px;
+      background: none; border: 1.5px dashed #d1d5db; border-radius: 8px;
+      padding: 7px 14px; font-size: 20px; color: var(--muted);
+      cursor: pointer; font-family: inherit; transition: all 0.2s; margin-top: 8px;
+    }
+    .btn-add-member:hover { border-color: var(--red); color: var(--red); }
+
+    /* ── Footer actions ──────────────────── */
+    .form-footer {
+      display: flex; align-items: center; gap: 12px;
+      padding-top: 20px; border-top: 1px solid var(--border); margin-top: 24px;
+      flex-wrap: wrap;
+    }
+    .btn-submit {
+      display: inline-flex; align-items: center; gap: 7px;
+      background: var(--red); color: #fff; border: none;
+      border-radius: 10px; padding: 12px 24px; font-size: 16px;
+      font-weight: 700; cursor: pointer; font-family: inherit;
+      transition: background 0.2s;
+    }
+    .btn-submit:hover { background: var(--red-dark); }
+    .btn-submit:disabled { background: #e5e7eb; color: #9ca3af; cursor: not-allowed; }
+    .btn-cancel {
+      color: var(--muted); font-size: 16px; font-weight: 600;
+      text-decoration: none; padding: 12px 16px;
+    }
+    .btn-cancel:hover { color: var(--red); }
+    .form-status { margin-left: auto; font-size: 14px; font-weight: 600; }
+
+    /* ── Tab nav btns ────────────────────── */
+    .tab-footer { display: flex; justify-content: flex-end; gap: 10px; margin-top: 20px; }
+    .btn-tab-next, .btn-tab-back {
+      display: inline-flex; align-items: center; gap: 6px;
+      padding: 9px 18px; border-radius: 9px; font-size: 16px;
+      font-weight: 600; cursor: pointer; font-family: inherit;
+      transition: all 0.15s; border: none;
+    }
+    .btn-tab-next { background: var(--red); color: #fff; }
+    .btn-tab-next:hover { background: var(--red-dark); }
+    .btn-tab-back { background: var(--surface); color: var(--muted); border: 1px solid var(--border); }
+    .btn-tab-back:hover { border-color: var(--red); color: var(--red); }
+  </style>
+</head>
+<body>
+<div class="dashboard-layout">
+  {% include "../sidebar.html" %}
+  <div class="dashboard-main">
+    <div class="add-project-wrap">
+
+      <div class="page-header">
+        <h2><i class="bi bi-folder-plus"></i> Add Project</h2>
+        <p>Manually create a project or grant not yet in your CCV.</p>
+      </div>
+
+      {% csrf_token %}
+
+      <!-- Tab nav -->
+      <div class="tab-nav">
+        <button class="tab-nav-btn active" onclick="switchTab(0)" id="tab-btn-0">
+          <span class="tab-num">1</span> Details
+        </button>
+        <button class="tab-nav-btn" onclick="switchTab(1)" id="tab-btn-1">
+          <span class="tab-num">2</span> Funding
+        </button>
+        <button class="tab-nav-btn" onclick="switchTab(2)" id="tab-btn-2">
+          <span class="tab-num">3</span> People
+        </button>
+        <button class="tab-nav-btn" onclick="switchTab(3)" id="tab-btn-3">
+          <span class="tab-num">4</span> Extra
+        </button>
+      </div>
+
+      <div class="tab-body">
+
+        <!-- ═══ TAB 1: DETAILS ═══ -->
+        <div class="tab-panel active" id="tab-0">
+
+          <div class="form-group">
+            <label>Your Role</label>
+            <div class="type-selector">
+              <button type="button" class="type-btn active" data-type="pi"><i class="bi bi-person-fill"></i> PI</button>
+              <button type="button" class="type-btn" data-type="co_pi"><i class="bi bi-people-fill"></i> Co-PI</button>
+              <button type="button" class="type-btn" data-type="pa"><i class="bi bi-person-check-fill"></i> PA</button>
+              <button type="button" class="type-btn" data-type="co_app"><i class="bi bi-person-plus-fill"></i> Co-Ap</button>
+              <button type="button" class="type-btn" data-type="other"><i class="bi bi-three-dots"></i> Other</button>
+            </div>
+            <input type="hidden" id="projectRole" value="pi">
+          </div>
+
+          <div class="form-group">
+            <label>Status</label>
+            <div class="toggle-group">
+              <button type="button" class="toggle-btn active" data-field="status" data-value="awarded">Awarded</button>
+              <button type="button" class="toggle-btn" data-field="status" data-value="submitted">Submitted</button>
+              <button type="button" class="toggle-btn" data-field="status" data-value="pending">Pending</button>
+              <button type="button" class="toggle-btn" data-field="status" data-value="completed">Completed</button>
+              <button type="button" class="toggle-btn" data-field="status" data-value="rejected">Rejected</button>
+            </div>
+            <input type="hidden" id="projectStatus" value="awarded">
+          </div>
+
+          <div class="form-group">
+            <label>Project Title <span style="color:var(--red);">*</span></label>
+            <input type="text" id="projectTitle" class="field-input" placeholder="e.g. AI-Based Rehabilitation System">
+          </div>
+
+          <div class="form-group">
+            <label>Description <span class="opt">optional</span></label>
+            <textarea id="projectDescription" class="field-input" rows="3" placeholder="Brief description of the project..."></textarea>
+          </div>
+          <br>
+          <br>
+          <div class="form-row">
+            <div class="form-group">
+              <label>Start Date</label>
+              <input type="date" id="startDate" class="field-input">
+            </div>
+            <div class="form-group">
+              <label>End Date</label>
+              <input type="date" id="endDate" class="field-input">
+            </div>
+          </div>
+
+          <div class="tab-footer">
+            <button class="btn-tab-next" onclick="switchTab(1)">Funding <i class="bi bi-arrow-right"></i></button>
+          </div>
+        </div>
+
+        <!-- ═══ TAB 2: FUNDING ═══ -->
+        <div class="tab-panel" id="tab-1">
+
+          <div class="form-row">
+            <div class="form-group">
+              <label>Funding Organization</label>
+              <input type="text" id="fundingOrg" class="field-input" placeholder="e.g. NSERC, CIHR">
+            </div>
+            <div class="form-group">
+              <label>Funding Type</label>
+              <input type="text" id="fundingType" class="field-input" placeholder="e.g. Discovery Grant">
+            </div>
+          </div>
+
+          <div class="form-row">
+            <div class="form-group">
+              <label>Currency</label>
+              <select id="fundingCurrency" class="field-input">
+                <option value="CAD">CAD — Canadian Dollar</option>
+                <option value="USD">USD — US Dollar</option>
+              </select>
+            </div>
+        </div>
+        <div class="form-row">
+            <div class="form-group">
+              <label>Total Funding</label>
+              <input type="number" id="totalFunding" class="field-input" placeholder="e.g. 500000" min="0">
+            </div>
+            <div class="form-group">
+              <label>Amount Awarded to UNB</label>
+              <input type="number" id="fundingReceived" class="field-input" placeholder="e.g. 300000" min="0">
+            </div>
+        </div>
+
+          <div class="form-group">
+            <label>Amount Kept by UNB ($) <span class="opt">optional</span></label>
+            <input type="number" id="fundingKeptByUnb" class="field-input" placeholder="e.g. 250000" min="0">
+          </div>
+
+          <div class="tab-footer">
+            <button class="btn-tab-back" onclick="switchTab(0)"><i class="bi bi-arrow-left"></i> Back</button>
+            <button class="btn-tab-next" onclick="switchTab(2)">People <i class="bi bi-arrow-right"></i></button>
+          </div>
+        </div>
+
+        <!-- ═══ TAB 3: PEOPLE ═══ -->
+        <div class="tab-panel" id="tab-2">
+          <div class="people-split">
+
+            <!-- HQP -->
+            <div class="people-block">
+              <h4><i class="bi bi-mortarboard-fill"></i> HQP — Students in RIMS</h4>
+              <p>Tag students who are working on this project. They must already have a RIMS account.</p>
+              <div style="position:relative;">
+                <input type="text" id="hqpSearchInput" class="field-input"
+                      placeholder="Search by name..." autocomplete="off"
+                      oninput="searchHQP(this.value)">
+                <div id="hqpDropdown" style="
+                  display:none; position:absolute; top:100%; left:0; right:0; z-index:100;
+                  background:#fff; border:1px solid var(--border); border-radius:8px;
+                  max-height:200px; overflow-y:auto; box-shadow:0 4px 12px rgba(0,0,0,0.1);
+                "></div>
+              </div>
+              <div class="hqp-tags" id="hqpTagged">
+                <span style="font-size:13px;color:#bbb;font-style:italic;">
+                  No students tagged yet
+                </span>
+              </div>
+              <br>
+              <br>
+              <div>
+                <h4><i class="bi bi-building"></i> External Collaborators &amp; Partners</h4>
+                  <p>Add people not in RIMS from academic collaborators, industry or community partners.</p>
+                  <div id="membersContainer"></div>
+                  <button type="button" class="btn-add-member" onclick="addMemberRow()">
+                    <i class="bi bi-plus-circle"></i> Add Member
+                  </button>
+              </div>
+                
+            </div>
+
+            <div class="divider-v"></div>
+
+            <!-- External members -->
+            <div class="people-block">
+              
+
+              <div id="membersEmpty" style="
+                background: var(--surface); border: 1.5px dashed var(--border);
+                border-radius: 10px; padding: 16px 14px; margin-bottom: 10px;
+                font-size:18px; color: var(--muted); line-height: 1.7;
+              ">
+                <div style="font-weight:700;color:var(--ink);margin-bottom:8px;">
+                  <i class="bi bi-info-circle" style="color:var(--red);margin-right:4px;"></i>
+                  Partner Types
+                </div>
+                <p style="margin:0 0 8px;">People <strong>not</strong> in RIMS. Click <em>Add Member</em> below to add:</p>
+                <div style="display:flex;flex-direction:column;gap:6px;">
+                  <div style="display:flex;align-items:center;gap:8px;">
+                    <span style="background:#dbeafe;color:#1d4ed8;padding:2px 8px;border-radius:6px;font-size:15px;font-weight:700;">Academic</span>
+                    <span>Collaborators from other institutions</span>
+                  </div>
+                  <div style="display:flex;align-items:center;gap:8px;">
+                    <span style="background:#dcfce7;color:#166534;padding:2px 8px;border-radius:6px;font-size:15px;font-weight:700;">Industry</span>
+                    <span>Companies, startups, private sector</span>
+                  </div>
+                  <div style="display:flex;align-items:center;gap:8px;">
+                    <span style="background:#fef3c7;color:#92400e;padding:2px 8px;border-radius:6px;font-size:15px;font-weight:700;">Community</span>
+                    <span>NGOs, community organizations</span>
+                  </div>
+                  <div style="display:flex;align-items:center;gap:8px;">
+                    <span style="background:#ede9fe;color:#5b21b6;padding:2px 8px;border-radius:6px;font-size:15px;font-weight:700;">Government</span>
+                    <span>Federal, provincial, municipal bodies</span>
+                  </div>
+                </div>
+              </div>
+
+              
+            </div>
+
+          </div>
+
+          <div class="tab-footer">
+            <button class="btn-tab-back" onclick="switchTab(1)"><i class="bi bi-arrow-left"></i> Back</button>
+            <button class="btn-tab-next" onclick="switchTab(3)">Extra <i class="bi bi-arrow-right"></i></button>
+          </div>
+        </div>
+
+        <!-- ═══ TAB 4: EXTRA ═══ -->
+        <div class="tab-panel" id="tab-3">
+
+          <div class="form-group">
+            <label>Project Conception <span class="opt">optional</span></label>
+            <textarea id="projectConception" class="field-input" rows="3"
+                      placeholder="How did this project idea originate?"></textarea>
+          </div>
+          <br>
+          <br>
+          <div class="form-group">
+            <label>Next Steps <span class="opt">optional</span></label>
+            <textarea id="projectNextSteps" class="field-input" rows="3"
+                      placeholder="What are the planned next steps?"></textarea>
+          </div>
+          <br>
+          <br>
+          <div class="form-group">
+            <label>IP Activities <span class="opt">optional</span></label>
+            <textarea id="projectIpActivities" class="field-input" rows="2"
+                      placeholder="Any patents, licenses, or IP-related activities..."></textarea>
+          </div>
+          <br>
+          <br>
+          <div class="tab-footer" style="justify-content:space-between;">
+            <button class="btn-tab-back" onclick="switchTab(2)"><i class="bi bi-arrow-left"></i> Back</button>
+            <div style="display:flex;align-items:center;gap:12px;">
+              <a href="{% url 'view_projects' %}" class="btn-cancel">Cancel</a>
+              <button id="submitProject" class="btn-submit">
+                <i class="bi bi-check-circle-fill"></i> Create Project
+              </button>
+              <span id="formStatus" class="form-status"></span>
+            </div>
+          </div>
+        </div>
+
+      </div><!-- /tab-body -->
+    </div><!-- /add-project-wrap -->
+  </div>
+</div>
+
+<script src="{% static 'js/dashboard.js' %}"></script>
+<script>
+
+  function renderTaggedHQP() {
+  const container = document.getElementById('hqpTagged');
+    if (!Object.keys(taggedHQP).length) {
+      container.innerHTML = `<span style="font-size:13px;color:#bbb;font-style:italic;">No students tagged yet</span>`;
+      return;
+    }
+    container.innerHTML = Object.values(taggedHQP).map(s => `
+      <div class="hqp-tag">
+        <i class="bi bi-person-fill"></i>
+        ${s.name}${s.degree ? ` (${s.degree})` : ''}
+        <span onclick="removeHQP(${s.id})">&times;</span>
+      </div>`).join('');
+  }
+
+  // ── Tab switching ─────────────────────────────────────────
+  let currentTab = 0;
+  const TABS = 4;
+
+  function switchTab(n) {
+    document.querySelectorAll('.tab-panel').forEach((p, i) => {
+      p.classList.toggle('active', i === n);
+    });
+    document.querySelectorAll('.tab-nav-btn').forEach((b, i) => {
+      b.classList.remove('active');
+      if (i === n) b.classList.add('active');
+    });
+    currentTab = n;
+  }
+
+  // ── Role selector ─────────────────────────────────────────
+  document.querySelectorAll('.type-btn').forEach(btn => {
+    btn.addEventListener('click', function () {
+      document.querySelectorAll('.type-btn').forEach(b => b.classList.remove('active'));
+      this.classList.add('active');
+      document.getElementById('projectRole').value = this.dataset.type;
+    });
+  });
+
+  // ── Status toggle ─────────────────────────────────────────
+  document.querySelectorAll('.toggle-btn[data-field="status"]').forEach(btn => {
+    btn.addEventListener('click', function () {
+      document.querySelectorAll('.toggle-btn[data-field="status"]').forEach(b => b.classList.remove('active'));
+      this.classList.add('active');
+      document.getElementById('projectStatus').value = this.dataset.value;
+    });
+  });
+
+  // ── HQP search ────────────────────────────────────────────
+  const allStudents = [
+    {% for s in students %}
+    { id: {{ s.id }}, name: "{{ s.get_full_name|escapejs }}",
+      degree: "{% if s.student_profile %}{{ s.student_profile.degree_label|escapejs }}{% endif %}" },
+    {% endfor %}
+  ];
+
+  let taggedHQP = {};
+
+  function searchHQP(query) {
+    const dropdown = document.getElementById('hqpDropdown');
+    if (!query.trim()) { dropdown.style.display = 'none'; return; }
+    const matches = allStudents.filter(s =>
+      s.name.toLowerCase().includes(query.toLowerCase()) && !taggedHQP[s.id]
+    );
+    if (!matches.length) { dropdown.style.display = 'none'; return; }
+    dropdown.innerHTML = matches.map(s => `
+      <div onclick="tagHQP(${s.id},'${s.name.replace(/'/g,"\\'")}','${s.degree}')"
+           style="padding:10px 14px;cursor:pointer;font-size:14px;border-bottom:1px solid #f3f4f6;"
+           onmouseover="this.style.background='#fef2f3'" onmouseout="this.style.background='#fff'">
+        <strong>${s.name}</strong>
+        ${s.degree ? `<span style="color:#9ca3af;margin-left:6px;">${s.degree}</span>` : ''}
+      </div>`).join('');
+    dropdown.style.display = 'block';
+  }
+
+  function tagHQP(id, name, degree) {
+    taggedHQP[id] = { id, name, degree };
+    renderTaggedHQP();
+    document.getElementById('hqpSearchInput').value = '';
+    document.getElementById('hqpDropdown').style.display = 'none';
+  }
+
+  function removeHQP(id) {
+    delete taggedHQP[id];
+    renderTaggedHQP();
+  }
+
+  function renderTaggedHQP() {
+    document.getElementById('hqpTagged').innerHTML = Object.values(taggedHQP).map(s => `
+      <div class="hqp-tag">
+        <i class="bi bi-person-fill"></i>
+        ${s.name}${s.degree ? ` (${s.degree})` : ''}
+        <span onclick="removeHQP(${s.id})">&times;</span>
+      </div>`).join('');
+  }
+
+  document.addEventListener('click', e => {
+    const search = document.getElementById('hqpSearchInput');
+    if (search && !search.closest('div').contains(e.target)) {
+      document.getElementById('hqpDropdown').style.display = 'none';
+    }
+  });
+
+  // ── External members ──────────────────────────────────────
+  let memberCount = 0;
+
+  function addMemberRow() {
+    memberCount++;
+    const id  = `member-${memberCount}`;
+    const row = document.createElement('div');
+    row.id    = id;
+    row.className = 'member-row';
+    row.innerHTML = `
+      <div>
+        <label>Name</label>
+        <input type="text" class="member-name field-input" placeholder="e.g. Dr. Smith">
+      </div>
+      <div>
+        <label>Role</label>
+        <select class="member-role field-input">
+          <option value="co_pi">Co-Investigator</option>
+          <option value="co_app">Co-applicant</option>
+          <option value="pa">Principal Applicant</option>
+          <option value="other" selected>Team Member</option>
+        </select>
+      </div>
+      <div>
+        <label>Partner Type</label>
+        <select class="member-partner-type field-input">
+          <option value="academic" selected>Academic</option>
+          <option value="industry">Industry</option>
+          <option value="community">Community</option>
+          <option value="government">Government</option>
+          <option value="other">Other</option>
+        </select>
+      </div>
+      <button type="button" class="btn-remove" onclick="document.getElementById('${id}').remove()">
+        <i class="bi bi-trash"></i>
+      </button>`;
+    document.getElementById('membersContainer').appendChild(row);
+  }
+
+  function collectMembers() {
+    return [...document.querySelectorAll('#membersContainer .member-row')]
+      .map(row => ({
+        name:         row.querySelector('.member-name')?.value.trim(),
+        role:         row.querySelector('.member-role')?.value || 'other',
+        partner_type: row.querySelector('.member-partner-type')?.value || 'academic',
+      }))
+      .filter(m => m.name);
+  }
+
+  // ── Submit ────────────────────────────────────────────────
+  const csrf = document.querySelector('[name=csrfmiddlewaretoken]').value;
+
+  document.getElementById('submitProject').addEventListener('click', async function () {
+    const title  = document.getElementById('projectTitle').value.trim();
+    const status = document.getElementById('formStatus');
+
+    if (!title) {
+      switchTab(0);
+      setTimeout(() => {
+        document.getElementById('projectTitle').focus();
+        status.textContent = 'Project title is required.';
+        status.style.color = 'red';
+      }, 50);
+      return;
+    }
+
+    this.disabled      = true;
+    status.textContent = 'Saving...';
+    status.style.color = '#666';
+
+    try {
+      const res = await fetch('{% url "add_project" %}', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'X-CSRFToken': csrf },
+        body: JSON.stringify({
+          title:                title,
+          description:          document.getElementById('projectDescription').value.trim(),
+          funding_organization: document.getElementById('fundingOrg').value.trim(),
+          funding_type:         document.getElementById('fundingType').value.trim(),
+          total_funding:        document.getElementById('totalFunding').value || null,
+          funding_received:     document.getElementById('fundingReceived').value || null,
+          funding_kept_by_unb:  document.getElementById('fundingKeptByUnb').value || null,
+          start_date:           document.getElementById('startDate').value || null,
+          end_date:             document.getElementById('endDate').value || null,
+          role:                 document.getElementById('projectRole').value,
+          status:               document.getElementById('projectStatus').value,
+          conception:           document.getElementById('projectConception').value.trim(),
+          next_steps:           document.getElementById('projectNextSteps').value.trim(),
+          ip_activities:        document.getElementById('projectIpActivities').value.trim(),
+          members:              collectMembers(),
+          hqp_ids:              Object.keys(taggedHQP).map(Number),
+          currency: document.getElementById('fundingCurrency').value || 'CAD',
+        }),
+      });
+
+      const data = await res.json();
+
+      if (data.success) {
+        status.textContent = '✓ Project created!';
+        status.style.color = 'green';
+        setTimeout(() => { window.location.href = '{% url "view_projects" %}'; }, 1200);
+      } else {
+        status.textContent = data.error || 'Error creating project.';
+        status.style.color = 'red';
+        this.disabled = false;
+      }
+    } catch (e) {
+      status.textContent = 'Network error. Please try again.';
+      status.style.color = 'red';
+      this.disabled = false;
+    }
+  });
+</script>
+</body>
+</html>

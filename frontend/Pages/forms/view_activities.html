@@ -1,0 +1,238 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>My Activities</title>
+  <link rel="icon" href="{% static 'assets/IBE-logo.png' %}">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css">
+  <link rel="stylesheet" href="{% static 'css/activities.css' %}">
+  <link rel="stylesheet" href="{% static 'css/dashboard.css' %}">
+  <link rel="stylesheet" href="{% static 'css/activity_detail_modal.css' %}">
+</head>
+
+<body>
+  <div class="dashboard-layout">
+    {% include "../sidebar.html" %}
+
+    <div class="dashboard-main">
+      <div class="activities-wrapper">
+        <div class="sidebar-divider"></div>
+
+        <!-- LEFT SIDEBAR WITH FILTERS -->
+        <aside class="sidebar">
+          <div class="sidebar-section">
+            <div class="sidebar-title">
+              <span><i class="bi bi-funnel"></i> Filters</span>
+            </div>
+            <div class="filter-item">
+              <input type="checkbox" id="filter-all" onchange="resetFilters()" checked>
+              <label for="filter-all">All Activities</label>
+            </div>
+          </div>
+
+          <div class="sidebar-section">
+            <div class="sidebar-title">Activity Type</div>
+            <div id="type-filters-container"></div>
+          </div>
+
+          <div class="sidebar-section">
+            <div class="sidebar-title">Category</div>
+            <div id="category-filters-container"></div>
+          </div>
+
+          <div class="sidebar-section">
+            <div class="sidebar-title">Year</div>
+            <div class="year-range">
+              <input type="number" id="year-from" placeholder="From" min="1900" max="2099" onchange="filterActivities()">
+              <span class="year-separator">-</span>
+              <input type="number" id="year-to" placeholder="To" min="1900" max="2099" onchange="filterActivities()">
+            </div>
+          </div>
+
+          <div class="sidebar-section">
+            <button onclick="clearAllFilters()" class="clear-filters-btn">
+              <i class="bi bi-x-circle"></i> Clear All Filters
+            </button>
+          </div>
+        </aside>
+
+        <!-- MAIN CONTENT -->
+        <main class="main-content">
+
+          <div class="search-section">
+            <div class="search-box">
+              <i class="bi bi-search"></i>
+              <input type="text" id="search-input" placeholder="Search by title, type, or event..." onkeyup="filterActivities()">
+            </div>
+            <div class="sort-control">
+              <span class="sort-label">Sort by:</span>
+              <select class="sort-select" id="sort-by" onchange="filterActivities()">
+                <option value="recent">Most Recent</option>
+                <option value="oldest">Oldest</option>
+                <option value="title-asc">Title (A-Z)</option>
+                <option value="title-desc">Title (Z-A)</option>
+              </select>
+            </div>
+          </div>
+
+          <div class="activities-header">
+            <h2>Activities</h2>
+
+            <div>
+              <a href="{% url 'export_activities_csv' %}" class="export-btn">
+                <i class="bi bi-download"></i> Export CSV
+              </a>
+
+              {% if user.user_type == 'student' or user.user_type == 'researcher' %}
+              <a href="{% url 'log_activity' %}" class="btn-log-activity">
+                <i class="bi bi-plus-circle"></i> Log Activity
+              </a>
+              {% endif %}
+            </div>
+          </div>
+
+          <div class="results-info">
+            <span id="results-count">0 activities found</span>
+            <span id="active-filters" class="active-filters"></span>
+          </div>
+
+          {% csrf_token %}
+
+          {% if activities %}
+            <div class="activities-list" id="activities-list">
+              {% for activity in activities %}
+              <div class="activity-card"
+                data-activity-id="{{ activity.id }}"
+                data-type="{{ activity.activity_type }}"
+                data-category="{{ activity.category }}"
+                data-date="{{ activity.date|date:'Y-m-d' }}"
+                data-year="{{ activity.date|date:'Y' }}"
+                data-title="{{ activity.title|escapejs }}"
+                data-description="{{ activity.description|escapejs }}">
+
+                <!-- Header row -->
+                <div class="activity-card-header">
+                  <h3 class="activity-title">{{ activity.title }}</h3>
+                  <div class="activity-card-actions">
+                    <span class="type-badge type-{{ activity.activity_type|lower }}">{{ activity.get_activity_type_display }}</span>
+                    <button class="btn-delete" onclick="event.stopPropagation(); deleteItem('activity', {{ activity.id }}, '{{ activity.title|escapejs }}')" title="Delete activity">
+                      <i class="bi bi-trash3"></i>
+                    </button>
+                  </div>
+                </div>
+
+                <!-- Flags row -->
+                {% if activity.invited or activity.keynote or activity.category %}
+                <div class="activity-flags">
+                  {% if activity.category %}
+                  <span class="flag-pill flag-category">{{ activity.get_category_display }}</span>
+                  {% endif %}
+                  {% if activity.invited %}
+                  <span class="flag-pill flag-invited"><i class="bi bi-envelope-open"></i> Invited</span>
+                  {% endif %}
+                  {% if activity.keynote %}
+                  <span class="flag-pill flag-keynote"><i class="bi bi-star"></i> Keynote</span>
+                  {% endif %}
+                </div>
+                {% endif %}
+
+                <!-- Meta row -->
+                <div class="activity-meta">
+                  {% if activity.date %}
+                  <div class="meta-item">
+                    <span class="meta-label">Date</span>
+                    <span class="meta-value">{{ activity.date|date:"M d, Y" }}</span>
+                  </div>
+                  {% endif %}
+
+                  {% if activity.location %}
+                  <div class="meta-item">
+                    <span class="meta-label">Location</span>
+                    <span class="meta-value">{{ activity.location }}</span>
+                  </div>
+                  {% endif %}
+
+                  {% if activity.co_presenters %}
+                  <div class="meta-item">
+                    <span class="meta-label">Co-presenters</span>
+                    <span class="meta-value">{{ activity.co_presenters }}</span>
+                  </div>
+                  {% endif %}
+
+                  {% if activity.audience %}
+                  <div class="meta-item">
+                    <span class="meta-label">Audience</span>
+                    <span class="meta-value">{{ activity.audience }}</span>
+                  </div>
+                  {% endif %}
+                </div>
+
+                <!-- Details -->
+                {% if activity.description %}
+                <div class="activity-details-section">
+                  <div class="details-label">Details</div>
+                  <p class="details-text">{{ activity.description }}</p>
+                </div>
+                {% endif %}
+
+              </div>
+              {% endfor %}
+            </div>
+
+            <div id="pagination-container" class="pagination-container">
+              <button class="pagination-btn" id="prev-btn" onclick="previousPage()">← Previous</button>
+              <span class="pagination-info" id="page-info">Page 1</span>
+              <button class="pagination-btn" id="next-btn" onclick="nextPage()">Next →</button>
+            </div>
+
+          {% else %}
+            <div class="no-activities">
+              <i class="bi bi-calendar-event"></i>
+              <h3>No activities yet</h3>
+              <p>Your activities from CCV uploads will appear here</p>
+            </div>
+          {% endif %}
+
+        </main>
+      </div>
+    </div>
+  </div>
+
+  {% include "./activity_detail_modal.html" %}
+
+  <script src="{% static 'js/activities.js' %}"></script>
+  <script src="{% static 'js/activity_detail_modal.js' %}"></script>
+  <script>
+  function deleteItem(type, id, title) {
+    if (!confirm(`Are you sure you want to delete "${title}"?`)) return;
+
+    const urls = {
+      activity: `/api/activities/delete/${id}/`,
+      publication: `/publications/delete/${id}/`,
+      project: `/api/projects/delete/${id}/`,
+    };
+
+    fetch(urls[type], {
+      method: 'POST',
+      headers: { 'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value },
+    })
+    .then(r => r.json())
+    .then(d => {
+      if (d.success) {
+        const card = document.querySelector(`[data-${type}-id="${id}"]`);
+        if (card) {
+          card.style.transition = 'opacity 0.3s, transform 0.3s';
+          card.style.opacity = '0';
+          card.style.transform = 'translateX(20px)';
+          setTimeout(() => card.remove(), 300);
+        }
+      } else {
+        alert(d.error || 'Delete failed');
+      }
+    })
+    .catch(() => alert('Delete failed. Please try again.'));
+  }
+  </script>
+</body>
+</html>

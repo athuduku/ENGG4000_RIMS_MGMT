@@ -1,0 +1,367 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>My Publications</title>
+  <link rel="icon" href="{% static 'assets/IBE-logo.png' %}">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css">
+  <link rel="stylesheet" href="{% static 'css/publications.css' %}">
+  <link rel="stylesheet" href="{% static 'css/dashboard.css' %}">
+  <link rel="stylesheet" href="{% static 'css/sidebar.css' %}">
+</head>
+
+<body>
+  <div class="dashboard-layout">
+
+    {% include "../sidebar.html" %}
+
+    <div class="dashboard-main">
+      <div class="publications-wrapper">
+        <div class="sidebar-divider"></div>
+
+        <!-- LEFT FILTER SIDEBAR -->
+        <aside class="filter-sidebar">
+
+          <div class="filter-section">
+            <div class="filter-section-title">
+              <span><i class="bi bi-funnel"></i> Filters</span>
+            </div>
+            <div class="filter-item">
+              <input type="checkbox" id="filter-all" onchange="resetFilters()" checked>
+              <label for="filter-all">All Publications</label>
+            </div>
+          </div>
+
+          <div class="filter-section">
+            <div class="filter-section-title">Publication Type</div>
+            <div id="type-filters-container"></div>
+          </div>
+
+          <div class="filter-section">
+            <div class="filter-section-title">Status</div>
+            <div id="status-filters-container"></div>
+          </div>
+
+          <div class="filter-section">
+            <div class="filter-section-title">Year Range</div>
+            <div class="year-range">
+              <input type="number" id="year-from" placeholder="From" min="1900" max="2099" onchange="filterPublications()">
+              <span class="year-separator">–</span>
+              <input type="number" id="year-to" placeholder="To" min="1900" max="2099" onchange="filterPublications()">
+            </div>
+          </div>
+
+          <div class="filter-section">
+            <button onclick="clearAllFilters()" class="clear-filters-btn">
+              <i class="bi bi-x-circle"></i> Clear All Filters
+            </button>
+          </div>
+
+        </aside>
+
+        <!-- MAIN CONTENT -->
+        <main class="pub-main-content">
+
+          <!-- Search + Sort -->
+          <div class="search-section">
+            <div class="search-box">
+              <i class="bi bi-search"></i>
+              <input type="text" id="search-input" placeholder="Search by title, authors, or journal… (supports AND / OR)" onkeyup="filterPublications()">
+            </div>
+            <div class="sort-control">
+              <span class="sort-label">Sort by:</span>
+              <select class="sort-select" id="sort-by" onchange="filterPublications()">
+                <option value="recent">Most Recent</option>
+                <option value="oldest">Oldest First</option>
+                <option value="title-asc">Title A–Z</option>
+                <option value="title-desc">Title Z–A</option>
+              </select>
+            </div>
+          </div>
+
+          <!-- Header -->
+          <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:20px; flex-wrap:wrap; gap:12px;">
+            <div>
+            </div>
+            
+          </div>
+          <div class="publications-header">
+            <h2>Publications</h2>
+            <div>
+              <a href="{% url 'export_publications_csv' %}" class="export-btn">
+                  <i class="bi bi-download"></i> Export CSV
+                </a>
+                <a href="{% url 'add_publication' %}" class="add-btn">
+                  <i class="bi bi-plus-circle"></i> Add Publication
+                </a>
+            </div>
+            
+          </div>
+
+          <!-- Results info -->
+          <div class="results-info">
+            <span id="results-count">0 publications found</span>
+          </div>
+
+          {% csrf_token %}
+
+          {% if publications %}
+          <div class="publications-list" id="publications-list">
+            {% for pub in publications %}
+            <div class="publication-card"
+                 data-publication-id="{{ pub.id }}"
+                 data-type="{{ pub.publication_type }}"
+                 data-status="{{ pub.status }}"
+                 data-year="{{ pub.publication_date|date:'Y' }}"
+                 data-title="{{ pub.title|lower }}"
+                 data-authors="{{ pub.authors|lower }}"
+                 data-journal="{{ pub.journal|lower }}">
+
+              <!-- Card Top: title + badges -->
+              <div class="card-top">
+                <h3 class="publication-title">
+                  {{ pub.title }}
+                </h3>
+                <div class="badge-group">
+                  {% if pub.status %}
+                  <span class="status-badge status-{{ pub.status }}">{{ pub.get_status_display }}</span>
+                  {% endif %}
+                  <span class="type-badge type-{{ pub.publication_type }}">{{ pub.get_publication_type_display }}</span>
+                </div>
+              </div>
+
+              <!-- Attribute flags -->
+              {% if pub.publication_type == 'journal' and pub.refereed or pub.publication_type == 'journal' and pub.open_access or pub.publication_type == 'conference' and pub.refereed or pub.publication_type == 'conference' and pub.invited %}
+              <div class="pub-flags">
+                {% if pub.refereed and pub.publication_type in 'journal,conference' %}
+                <span class="pub-flag flag-refereed"><i class="bi bi-patch-check"></i> Refereed</span>
+                {% endif %}
+                {% if pub.invited and pub.publication_type == 'conference' %}
+                <span class="pub-flag flag-invited"><i class="bi bi-envelope-open"></i> Invited</span>
+                {% endif %}
+                {% if pub.open_access and pub.publication_type == 'journal' %}
+                <span class="pub-flag flag-open"><i class="bi bi-unlock"></i> Open Access</span>
+                {% endif %}
+              </div>
+              {% endif %}
+
+              <!-- Meta Grid — type-specific fields -->
+              <div class="publication-meta">
+
+                <!-- Authors always shown -->
+                <div class="meta-item">
+                  <span class="meta-label">Authors</span>
+                  <div class="authors-container">
+                    <span class="meta-value authors-text">
+                      {{ pub.authors }}
+                    </span>
+                    <button class="toggle-authors-btn" onclick="toggleAuthors(this)">
+                      Show more
+                    </button>
+                  </div>
+                </div>
+
+                {% if pub.publication_type == 'journal' %}
+                  {% if pub.journal %}
+                  <div class="meta-item">
+                    <span class="meta-label">Journal</span>
+                    <span class="meta-value">{{ pub.journal }}</span>
+                  </div>
+                  {% endif %}
+                  {% if pub.volume or pub.issue %}
+                  <div class="meta-item">
+                    <span class="meta-label">Volume / Issue</span>
+                    <span class="meta-value">
+                      {% if pub.volume %}Vol. {{ pub.volume }}{% endif %}{% if pub.issue %}, No. {{ pub.issue }}{% endif %}
+                    </span>
+                  </div>
+                  {% endif %}
+                  {% if pub.pages %}
+                  <div class="meta-item">
+                    <span class="meta-label">Pages</span>
+                    <span class="meta-value">{{ pub.pages }}</span>
+                  </div>
+                  {% endif %}
+                  {% if pub.publisher %}
+                  <div class="meta-item">
+                    <span class="meta-label">Publisher</span>
+                    <span class="meta-value">{{ pub.publisher }}</span>
+                  </div>
+                  {% endif %}
+                  {% if pub.contribution_role %}
+                  <div class="meta-item">
+                    <span class="meta-label">Contribution Role</span>
+                    <span class="meta-value">{{ pub.contribution_role }}</span>
+                  </div>
+                  {% endif %}
+
+                {% elif pub.publication_type == 'conference' %}
+                  {% if pub.journal %}
+                  <div class="meta-item">
+                    <span class="meta-label">Conference</span>
+                    <span class="meta-value">{{ pub.journal }}</span>
+                  </div>
+                  {% endif %}
+                  {% if pub.conference_location %}
+                  <div class="meta-item">
+                    <span class="meta-label">Location</span>
+                    <span class="meta-value">{{ pub.conference_location }}</span>
+                  </div>
+                  {% endif %}
+                  {% if pub.pages %}
+                  <div class="meta-item">
+                    <span class="meta-label">Pages</span>
+                    <span class="meta-value">{{ pub.pages }}</span>
+                  </div>
+                  {% endif %}
+                  {% if pub.contribution_role %}
+                  <div class="meta-item">
+                    <span class="meta-label">Contribution Role</span>
+                    <span class="meta-value">{{ pub.contribution_role }}</span>
+                  </div>
+                  {% endif %}
+
+                {% elif pub.publication_type == 'chapter' %}
+                  {% if pub.book_title %}
+                  <div class="meta-item">
+                    <span class="meta-label">Book Title</span>
+                    <span class="meta-value">{{ pub.book_title }}</span>
+                  </div>
+                  {% endif %}
+                  {% if pub.editors %}
+                  <div class="meta-item">
+                    <span class="meta-label">Editors</span>
+                    <span class="meta-value">{{ pub.editors }}</span>
+                  </div>
+                  {% endif %}
+                  {% if pub.publisher %}
+                  <div class="meta-item">
+                    <span class="meta-label">Publisher</span>
+                    <span class="meta-value">{{ pub.publisher }}</span>
+                  </div>
+                  {% endif %}
+                  {% if pub.pages %}
+                  <div class="meta-item">
+                    <span class="meta-label">Page Range</span>
+                    <span class="meta-value">{{ pub.pages }}</span>
+                  </div>
+                  {% endif %}
+                  {% if pub.publication_location %}
+                  <div class="meta-item">
+                    <span class="meta-label">Publication Location</span>
+                    <span class="meta-value">{{ pub.publication_location }}</span>
+                  </div>
+                  {% endif %}
+                  {% if pub.contribution_role %}
+                  <div class="meta-item">
+                    <span class="meta-label">Contribution Role</span>
+                    <span class="meta-value">{{ pub.contribution_role }}</span>
+                  </div>
+                  {% endif %}
+
+                {% elif pub.publication_type == 'patent' %}
+                  {% if pub.patent_number %}
+                  <div class="meta-item">
+                    <span class="meta-label">Patent No.</span>
+                    <span class="meta-value">{{ pub.patent_number }}</span>
+                  </div>
+                  {% endif %}
+                  {% if pub.country %}
+                  <div class="meta-item">
+                    <span class="meta-label">Country</span>
+                    <span class="meta-value">{{ pub.country }}</span>
+                  </div>
+                  {% endif %}
+                  {% if pub.filing_date %}
+                  <div class="meta-item">
+                    <span class="meta-label">Filing Date</span>
+                    <span class="meta-value">{{ pub.filing_date|date:"M d, Y" }}</span>
+                  </div>
+                  {% endif %}
+
+                {% else %}
+                  {% if pub.journal %}
+                  <div class="meta-item">
+                    <span class="meta-label">Venue</span>
+                    <span class="meta-value">{{ pub.journal }}</span>
+                  </div>
+                  {% endif %}
+                {% endif %}
+
+                <!-- Always shown for all types -->
+                <div class="meta-item">
+                  <span class="meta-label">{% if pub.publication_type == 'patent' %}Year Issued{% else %}Year{% endif %}</span>
+                  <span class="meta-value">{{ pub.publication_date|date:"Y" }}</span>
+                </div>
+                {% if pub.language %}
+                <div class="meta-item">
+                  <span class="meta-label">Language</span>
+                  <span class="meta-value">{{ pub.language }}</span>
+                </div>
+                {% endif %}
+                {% if pub.doi %}
+                <div class="meta-item">
+                  <span class="meta-label">DOI</span>
+                  <span class="meta-value">
+                    <a href="https://doi.org/{{ pub.doi }}" target="_blank">{{ pub.doi }}</a>
+                  </span>
+                </div>
+                {% endif %}
+
+              </div>
+
+              <!-- Abstract always visible if present -->
+              {% if pub.abstract %}
+              <div class="abstract-section">
+                <span class="abstract-label">Abstract</span>
+                <p class="abstract-text">{{ pub.abstract }}</p>
+              </div>
+              {% endif %}
+
+              <!-- Footer -->
+              <div class="publication-footer">
+                <div style="display:flex;align-items:center;gap:8px;">
+                  <select class="status-select" onchange="updatePubStatus({{ pub.id }}, this.value)">
+                    <option value="published" {% if pub.status == 'published' %}selected{% endif %}>Published</option>
+                    <option value="accepted" {% if pub.status == 'accepted' %}selected{% endif %}>Accepted</option>
+                    <option value="under_review" {% if pub.status == 'under_review' %}selected{% endif %}>Under Review</option>
+                    <option value="revision_requested" {% if pub.status == 'revision_requested' %}selected{% endif %}>Revision Requested</option>
+                    <option value="pending" {% if pub.status == 'pending' %}selected{% endif %}>Pending</option>
+                    <option value="draft" {% if pub.status == 'draft' %}selected{% endif %}>Draft</option>
+                    <option value="rejected" {% if pub.status == 'rejected' %}selected{% endif %}>Rejected</option>
+                    <option value="granted" {% if pub.status == 'granted' %}selected{% endif %}>Granted</option>
+                  </select>
+                </div>
+                <button class="btn-card-delete" onclick="event.stopPropagation(); deleteItem('publication', {{ pub.id }}, '{{ pub.title|escapejs }}')">
+                  <i class="bi bi-trash3"></i> Delete
+                </button>
+              </div>
+
+            </div>
+            {% endfor %}
+          </div>
+
+          <!-- Pagination -->
+          <div id="pagination-container" class="pagination-container">
+            <button class="pagination-btn" id="prev-btn" onclick="previousPage()">← Previous</button>
+            <span class="pagination-info" id="page-info">Page 1</span>
+            <button class="pagination-btn" id="next-btn" onclick="nextPage()">Next →</button>
+          </div>
+
+          {% else %}
+          <div class="no-publications">
+            <i class="bi bi-file-earmark-text"></i>
+            <h3>No publications yet</h3>
+            <p>Start building your publication portfolio by adding your first entry.</p>
+          </div>
+          {% endif %}
+
+        </main>
+      </div>
+    </div>
+  </div>
+
+  <script src="{% static 'js/publications.js' %}"></script>
+</body>
+</html>

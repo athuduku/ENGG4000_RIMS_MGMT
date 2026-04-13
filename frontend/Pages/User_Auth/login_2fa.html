@@ -1,0 +1,43 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Two-Factor Authentication</title>
+  <link rel="icon" href="{% static 'assets/IBE-logo.png' %}">
+  <link rel="stylesheet" href="{% static 'css/login.css' %}">
+</head>
+<body>
+  <div class="navbar">
+    <img src="{% static 'assets/IBE-logo.png' %}" alt="IBE Logo">
+    <ul>
+      <li><a href="{% url 'home' %}">Home</a></li>
+      <li><a href="{% url 'login' %}">Log In</a></li>
+    </ul>
+  </div>
+  <div class="container">
+    <h2>Two-Factor Authentication</h2>
+    <p class="subtitle">Enter the 6-digit code from your authenticator app</p>
+
+    {% if error %}
+    <p style="color:#C8102E;font-weight:600;margin-bottom:16px;">{{ error }}</p>
+    {% endif %}
+
+    <form method="POST">
+      {% csrf_token %}
+      <label>Verification Code</label>
+      <input type="text" name="token" placeholder="0 0 0 0 0 0"
+       maxlength="10" autocomplete="one-time-code"
+       style="font-size:20px;text-align:center;"
+       autofocus required>
+      <button type="submit" class="button">Verify</button>
+    </form>
+
+    <div class="divider"></div>
+    <p class="bottom-text">
+      Lost access to your authenticator?
+      <a href="#" onclick="alert('Contact your IBME administrator to reset 2FA.')">Get help</a>
+    </p>
+  </div>
+</body>
+</html>

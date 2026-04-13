@@ -1,0 +1,232 @@
+{% load static %}
+
+<head>
+  <meta charset="UTF-8">
+  <link rel="icon" href="{% static 'assets/IBE-logo.png' %}">
+  <link rel="stylesheet" href="{% static 'css/sidebar.css' %}">
+</head>
+
+<div class="rims-sidebar" id="rimsSidebar">
+
+  <button class="rims-sidebar-toggle" id="rimsSidebarToggle">
+    <i class="bi bi-list"></i>
+  </button>
+
+  <div class="rims-sidebar-logo">
+    <img src="{% static 'assets/sidebar_logo_white_transparent.png' %}" alt="Logo">
+  </div>
+
+  <ul class="rims-sidebar-nav">
+
+    <!-- Core -->
+    <li>
+      <a href="{% url 'dashboard' %}">
+        <i class="bi bi-speedometer2"></i>
+        <span>Dashboard</span>
+      </a>
+    </li>
+
+    {% if user.user_type == 'admin' %}
+
+    <li>
+      <a href="{% url 'reports_list' %}">
+        <i class="bi bi-bar-chart"></i>
+        <span>Reports</span>
+      </a>
+    </li>
+
+    {% if user.is_superuser %}
+    <li>
+      <a href="/admin-portal/">
+        <i class="bi bi-shield-lock"></i>
+        <span>Admin Panel</span>
+      </a>
+    </li>
+    {% endif %}
+
+      <li>
+        <a href="{% url 'notifications' %}" class="rims-sidebar-notif-link">
+          <i class="bi bi-bell"></i>
+          <span>Notifications</span>
+          <span class="rims-sidebar-notif-badge js-notif-badge" style="display:none;"></span>
+        </a>
+      </li>
+
+    {% elif user.user_type == 'researcher' %}
+
+      <li>
+        <a href="{% url 'view_publications' %}">
+          <i class="bi bi-book"></i>
+          <span>Publications</span>
+        </a>
+      </li>
+
+      <li>
+        <a href="{% url 'view_projects' %}">
+          <i class="bi bi-briefcase"></i>
+          <span>Projects</span>
+        </a>
+      </li>
+
+      <li>
+        <a href="{% url 'view_activities' %}">
+          <i class="bi bi-calendar-event"></i>
+          <span>Activities</span>
+        </a>
+      </li>
+
+      <li class="rims-sidebar-divider"></li>
+
+      <li>
+        <a href="{% url 'log_activity' %}">
+          <i class="bi bi-plus-circle"></i>
+          <span>Log Activity</span>
+        </a>
+      </li>
+
+      <li>
+        <a href="{% url 'add_publication' %}">
+          <i class="bi bi-file-earmark-plus"></i>
+          <span>Add Publication</span>
+        </a>
+      </li>
+
+      <li>
+        <a href="{% url 'add_project' %}">
+          <i class="bi bi-folder-plus"></i>
+          <span>Add Project</span>
+        </a>
+      </li>
+
+      <li class="rims-sidebar-divider"></li>
+
+      <li>
+        <a href="{% url 'notifications' %}" class="rims-sidebar-notif-link">
+          <i class="bi bi-bell"></i>
+          <span>Notifications</span>
+          <span class="rims-sidebar-notif-badge js-notif-badge" style="display:none;"></span>
+        </a>
+      </li>
+
+    {% elif user.user_type == 'student' %}
+
+      <li>
+        <a href="{% url 'view_publications' %}">
+          <i class="bi bi-book"></i>
+          <span>Publications</span>
+        </a>
+      </li>
+
+      <a href="{% url 'view_linked_publications' %}">
+        <i class="bi bi-people"></i>
+        <span>Lab Publications</span>
+      </a>
+
+      <li>
+        <a href="{% url 'view_activities' %}">
+          <i class="bi bi-calendar-event"></i>
+          <span>Activities</span>
+        </a>
+      </li>
+
+      <li class="rims-sidebar-divider"></li>
+
+      <li>
+        <a href="{% url 'log_activity' %}">
+          <i class="bi bi-plus-circle"></i>
+          <span>Log Activity</span>
+        </a>
+      </li>
+
+      <li>
+        <a href="{% url 'add_publication' %}">
+          <i class="bi bi-file-earmark-plus"></i>
+          <span>Add Publication</span>
+        </a>
+      </li>
+
+      <li class="rims-sidebar-divider"></li>
+
+      <li>
+        <a href="{% url 'notifications' %}" class="rims-sidebar-notif-link">
+          <i class="bi bi-bell"></i>
+          <span>Notifications</span>
+          <span class="rims-sidebar-notif-badge js-notif-badge" style="display:none;"></span>
+        </a>
+      </li>
+
+    {% endif %}
+
+    <li class="rims-sidebar-divider"></li>
+
+    <!-- Account -->
+    <li>
+      <a href="{% url 'profile' %}">
+        <i class="bi bi-person-circle"></i>
+        <span>My Profile</span>
+      </a>
+    </li>
+
+    <li>
+      <a href="{% url 'home' %}">
+        <i class="bi bi-house-door"></i>
+        <span>Home</span>
+      </a>
+    </li>
+
+    <li>
+      <a href="{% url 'logout' %}">
+        <i class="bi bi-box-arrow-right"></i>
+        <span>Logout</span>
+      </a>
+    </li>
+
+  </ul>
+
+</div>
+
+<script>
+  (function () {
+    const sidebar = document.getElementById('rimsSidebar');
+    
+    // Restore saved state on page load
+    if (localStorage.getItem('sidebarCollapsed') === 'true') {
+        sidebar.classList.add('collapsed');
+    }
+
+    document.getElementById('rimsSidebarToggle').addEventListener('click', function () {
+        sidebar.classList.toggle('collapsed');
+        // Save state
+        localStorage.setItem('sidebarCollapsed', sidebar.classList.contains('collapsed'));
+    });
+  })();
+  (function () {
+    var badge = document.querySelector('.js-notif-badge');
+    if (!badge) return;
+    function updateBadge() {
+      fetch('/api/notifications/unread-count/')
+        .then(function (r) { return r.json(); })
+        .then(function (data) {
+          var unread = data.unread || 0;
+          if (unread > 0) {
+            badge.textContent = unread > 99 ? '99+' : unread;
+            badge.style.display = 'inline-flex';
+          } else {
+            badge.style.display = 'none';
+          }
+        })
+        .catch(function () {});
+    }
+    updateBadge();
+    setInterval(updateBadge, 60000);
+  })();
+
+  (function () {
+    var path = window.location.pathname;
+    document.querySelectorAll('.rims-sidebar-nav li a').forEach(function (link) {
+      if (link.getAttribute('href') === path) {
+        link.classList.add('active');
+      }
+    });
+  })();
+</script>
