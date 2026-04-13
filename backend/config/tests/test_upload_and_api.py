@@ -100,12 +100,26 @@ class StudentUploadTests(TestCase):
     def test_wrong_owner(self):
         xml = b"""
         <generic-cv>
-            <section label="Identification"></section>
-            <section label="Research Funding History"></section>
-            <section label="Email">
-                <field label="Email Address">
-                    <value>wrong@test.com</value>
-                </field>
+            <section label="Personal Information">
+                <section label="Identification">
+                    <field label="First Name">
+                        <value>Wrong</value>
+                    </field>
+                    <field label="Family Name">
+                        <value>User</value>
+                    </field>
+                </section>
+                <section label="Email">
+                    <field label="Email Address">
+                        <value>wrong@test.com</value>
+                    </field>
+                </section>
+            </section>
+            <section label="Activities">
+                <section label="Presentations"></section>
+            </section>
+            <section label="Publications">
+                <section label="Journal Articles"></section>
             </section>
         </generic-cv>
         """
