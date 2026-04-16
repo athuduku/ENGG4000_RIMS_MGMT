@@ -125,6 +125,15 @@ else:
     SESSION_COOKIE_SECURE = False
     CSRF_COOKIE_SECURE    = False
 
+# ── Session & Headers ─────────────────────────────
+SESSION_COOKIE_AGE           = 28800
+SESSION_EXPIRE_AT_BROWSER_CLOSE = True
+SESSION_SAVE_EVERY_REQUEST   = True
+
+SECURE_CONTENT_TYPE_NOSNIFF  = True
+SECURE_REFERRER_POLICY       = "strict-origin-when-cross-origin"
+X_FRAME_OPTIONS              = "DENY"
+
 DATABASES = {
     'default': {
         'ENGINE':   'django.db.backends.postgresql',

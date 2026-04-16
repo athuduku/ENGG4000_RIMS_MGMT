@@ -36,5 +36,5 @@ def _mask_single(item):
     masked = item.copy()
     for field in FINANCIAL_FIELDS:
         if field in masked:
-            masked[field] = None
+            masked[field] = "Restricted"
     return masked

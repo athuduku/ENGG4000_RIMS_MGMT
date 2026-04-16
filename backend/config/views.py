@@ -83,7 +83,7 @@ def log_activity_page(request):
 # ─────────────────────────────────────────────
 
 @ratelimit(key='ip', rate='3/m', block=True, method=['POST'])
-@require_http_methods(["GET", "POST"])
+@ratelimit(key='post:email', rate='3/m', block=True, method=['POST'])
 def signup_view(request):
     if request.method == "POST":
         name             = request.POST.get("name", "").strip()
@@ -160,6 +160,7 @@ def signup_view(request):
 # ─────────────────────────────────────────────
 
 @ratelimit(key='ip', rate='5/m', block=True, method=['POST'])
+@ratelimit(key='post:email', rate='5/m', block=True, method=['POST'])
 def login_view(request):
     if request.method == "POST":
         email    = request.POST.get("email", "").strip().lower()
