@@ -526,7 +526,7 @@
       <!-- ── GRANTS BY RESEARCHER (PI chart) ───────────────────── -->
       <div class="report-section">
         <div class="section-header" onclick="this.parentElement.classList.toggle('collapsed')">
-          <h2><i class="bi bi-people"></i> Grants by researcher</h2>
+          <h2><i class="bi bi-people"></i> Grants & Recognition by researcher</h2>
           <i class="bi bi-chevron-down section-chevron"></i>
         </div>
         <div class="section-body">
@@ -557,7 +557,7 @@
               </div>
             </div>
             <div style="align-self:flex-end;">
-              <button onclick="renderPIChart()" class="btn-sm btn-red"><i class="bi bi-funnel"></i> Apply</button>
+              <button onclick="applyPIFilter()" class="btn-sm btn-red"><i class="bi bi-funnel"></i> Apply</button>
             </div>
           </div>
           <input type="hidden" id="pi-role-filter" value="all">  <!-- ← ADD after filter-inline div -->
@@ -623,6 +623,10 @@
   window.minYear     = {{ min_year }};
   window.maxYear     = {{ max_year }};
   window.currentYear = {{ current_year }};
+  window.scholTotal = {{ schol_total }};
+  window.scholCount = {{ schol_count }};
+  window.awardTotal = {{ award_total }};
+  window.awardCount = {{ award_count }};
 
   window.timelineChartData = [
     {% for item in timeline_data %}

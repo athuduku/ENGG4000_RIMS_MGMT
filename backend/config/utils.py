@@ -38,3 +38,64 @@ def _mask_single(item):
         if field in masked:
             masked[field] = "Restricted"
     return masked
+
+
+def log_action(request, action, target=None, summary=None, details=None):
+
+    from .models import AuditLog
+    ip = None
+    if request:
+        ip = (
+            request.META.get('HTTP_X_FORWARDED_FOR', '').split(',')[0].strip()
+            or request.META.get('REMOTE_ADDR')
+        )
+    AuditLog.objects.create(
+        user        = request.user if request and request.user.is_authenticated else None,
+        action      = action,
+        target_type = target.__class__.__name__ if target else None,
+        target_id   = target.pk if target else None,
+        summary     = summary or '',
+        details     = details or {},
+        ip_address  = ip,
+    )
+
+
+def generate_project_summary(project):
+    parts    = []
+    role_map = {
+        'pi':     'Principal Investigator-led',
+        'co_pi':  'Co-Investigator',
+        'pa':     'Principal Applicant-led',
+        'co_app': 'Co-applicant',
+        'other':  'Team member',
+    }
+    role_str     = role_map.get(project.role, '') if project.role else ''
+    funding_type = (project.funding_type or 'project').lower()
+    opening      = f"{role_str} {funding_type}".strip() if role_str else funding_type.capitalize()
+    parts.append(opening)
+
+    if project.funding_organization:
+        parts[-1] += f" funded by {project.funding_organization}"
+
+    if project.program_name:
+        parts[-1] += f" under the {project.program_name} program"
+
+    if project.start_date and project.end_date:
+        parts.append(f"running from {project.start_date} to {project.end_date}")
+    elif project.start_date:
+        parts.append(f"starting {project.start_date}")
+
+    if project.total_funding:
+        parts.append(f"with total funding of ${int(project.total_funding):,}")
+
+    # Use len() to avoid bypassing prefetch cache
+    team_count = len(project.team_members.all())
+    if team_count > 0:
+        parts.append(f"involving a team of {team_count + 1}")
+
+    if not parts:
+        return f"Research project: {project.title}."
+
+    summary = ", ".join(parts) + "."
+    return summary[0].upper() + summary[1:]
+

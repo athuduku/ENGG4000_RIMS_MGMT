@@ -3,7 +3,6 @@ const strengthDot = document.getElementById("strengthDot");
 
 passwordInput.addEventListener("input", function () {
   const password = passwordInput.value;
-
   let strength = 0;
 
   if (password.length >= 8) strength++;
@@ -33,17 +32,17 @@ document.getElementById("signupForm").addEventListener("submit", async function 
   const loginUrl        = document.querySelector(".button").dataset.loginUrl;
 
   if (password !== confirmPassword) {
-    alert("Passwords do not match!");
+    showMessage("Passwords do not match.", "error");
     return;
   }
 
   if (password.length < 8) {
-    alert("Password must be at least 8 characters.");
+    showMessage("Password must be at least 8 characters.", "error");
     return;
   }
 
   if (!/[A-Za-z]/.test(password) || !/[0-9]/.test(password)) {
-    alert("Password must contain both letters and numbers.");
+    showMessage("Password must contain both letters and numbers.", "error");
     return;
   }
 
@@ -66,13 +65,20 @@ document.getElementById("signupForm").addEventListener("submit", async function 
     const data = await response.json();
 
     if (response.ok) {
-      alert(data.message || "Account created successfully!");
-      window.location.href = loginUrl;
+      showMessage(data.message || "Account created successfully!", "success");
+      setTimeout(() => window.location.href = loginUrl, 2000);
     } else {
-      alert(data.error || "Signup failed. Please try again.");
+      showMessage(data.error || "Signup failed. Please try again.", "error");
     }
   } catch (err) {
     console.error("Signup failed:", err);
-    alert("Signup failed. Please try again later.");
+    showMessage("Signup failed. Please try again later.", "error");
   }
 });
+
+function showMessage(message, type) {
+  const div = document.getElementById("signupMessage");
+  div.textContent = message;
+  div.style.display = "block";
+  div.className = type === "success" ? "msg-success" : "msg-error";
+}

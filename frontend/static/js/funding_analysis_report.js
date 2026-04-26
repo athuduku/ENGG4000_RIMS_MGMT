@@ -290,6 +290,12 @@ function setCurrencyFilter(val) {
   renderPIChart();
 }
 
+function applyPIFilter() {
+  const from = document.getElementById('pi-year-from').value;
+  const to   = document.getElementById('pi-year-to').value;
+  window.location.href = `?year_from=${from}&year_to=${to}`;
+}
+
 
 function renderPIChart() {
   const yearFrom   = parseInt(document.getElementById('pi-year-from')?.value) || window.minYear || 0;
@@ -314,6 +320,24 @@ function renderPIChart() {
     return { pi: row.pi, amount, amount_to_ibme, amount_kept };
   }).filter(r => r.amount > 0).sort((a,b) => a.amount - b.amount);
 
+  const scholTotal = window.scholTotal || 0;
+  const awardTotal = window.awardTotal || 0;
+  const showSchol  = scholTotal > 0;
+  const showAward  = awardTotal > 0;
+
+  const pad        = showSchol ? [null] : [];
+
+  const allNames   = [
+    ...filtered.map(r => r.pi), 
+    ...(showAward ? ['Researcher Awards'] : []),
+    ...(showSchol ? ['Student Scholarships'] : []),
+  ];
+
+  const extraPad = [
+    ...(showAward ? [null] : []),
+    ...(showSchol ? [null] : []),
+  ];
+
   const chartEl = document.getElementById('piChart');
   if (!chartEl) return;
   const chart = echarts.getInstanceByDom(chartEl) || echarts.init(chartEl);
@@ -327,16 +351,19 @@ function renderPIChart() {
       trigger: 'axis',
       formatter: params => {
         let s = `<b>${params[0].name}</b><br/>`;
-        params.forEach(p => { s += `${p.marker} ${p.seriesName}: <b>${fmtTT(p.value)}</b><br/>`; });
+        params.forEach(p => {
+          if (p.value !== null && p.value !== undefined)
+            s += `${p.marker} ${p.seriesName}: <b>${fmtTT(p.value)}</b><br/>`;
+        });
         return s;
       }
     },
-    legend: { data: ['Total Grant', 'Amount to IBME', 'Kept at IBME'], bottom: 4, textStyle: { fontSize: 12 } },
+    legend: { data: ['Total Grant', 'Amount to IBME', 'Kept at IBME', 'Researcher Awards', 'Student Scholarships'], bottom: 4, textStyle: { fontSize: 12 } },
     grid:   { left: 16, right: 16, top: 20, bottom: 80, containLabel: true },
     xAxis: {
       type: 'category',
-      data: filtered.map(r => r.pi),
-      axisLabel: { fontSize: 12, color: '#374151', rotate: filtered.length > 4 ? 20 : 0, interval: 0 }
+      data: allNames,
+      axisLabel: { fontSize: 12, color: '#374151', rotate: allNames.length > 4 ? 20 : 0, interval: 0 }
     },
     yAxis: {
       type: 'value',
@@ -345,21 +372,41 @@ function renderPIChart() {
     series: [
       {
         name: 'Total Grant', type: 'bar', barGap: '5%', barCategoryGap: '35%',
-        data: filtered.map(r => r.amount),
+        data: [...filtered.map(r => r.amount), ...extraPad],
         itemStyle: { color: '#2563EB', borderRadius: [4,4,0,0] },
-        label: { show: true, position: 'top', fontSize: 11, formatter: p => fmtV(p.value) }
+        label: { show: true, position: 'top', fontSize: 11, formatter: p => p.value ? fmtV(p.value) : '' }
       },
       {
         name: 'Amount to IBME', type: 'bar',
-        data: filtered.map(r => r.amount_to_ibme),
+        data: [...filtered.map(r => r.amount_to_ibme), ...extraPad],
         itemStyle: { color: '#C8102E', borderRadius: [4,4,0,0] },
         label: { show: true, position: 'top', fontSize: 11, formatter: p => p.value > 0 ? fmtV(p.value) : '' }
       },
       {
         name: 'Kept at IBME', type: 'bar',
-        data: filtered.map(r => r.amount_kept),
+        data: [...filtered.map(r => r.amount_kept), ...extraPad],
         itemStyle: { color: '#9CA3AF', borderRadius: [4,4,0,0] },
         label: { show: true, position: 'top', fontSize: 11, formatter: p => p.value > 0 ? fmtV(p.value) : '' }
+      },
+      {
+        name: 'Researcher Awards', type: 'bar',
+        data: [
+          ...filtered.map(() => null),
+          ...(showAward ? [awardTotal] : []),
+          ...(showSchol  ? [null]       : []),
+        ],
+        itemStyle: { color: '#d97706', borderRadius: [4,4,0,0] },
+        label: { show: true, position: 'top', fontSize: 11, formatter: p => p.value ? fmtV(p.value) : '' }
+      },
+      {
+        name: 'Student Scholarships', type: 'bar',
+        data: [
+          ...filtered.map(() => null),
+          ...(showAward ? [null]        : []),
+          ...(showSchol  ? [scholTotal] : []),
+        ],
+        itemStyle: { color: '#7c3aed', borderRadius: [4,4,0,0] },
+        label: { show: true, position: 'top', fontSize: 11, formatter: p => p.value ? fmtV(p.value) : '' }
       }
     ]
   });
@@ -369,7 +416,7 @@ function renderPIChart() {
   // Companion table
   const tbody = document.getElementById('pi-table-body');
   if (tbody) {
-    tbody.innerHTML = [...filtered].reverse().map(r => `
+    const piRows = [...filtered].reverse().map(r => `
       <tr>
         <td><strong>${r.pi}</strong></td>
         <td class="amt">${pfx}$${Number(r.amount).toLocaleString()}</td>
@@ -377,5 +424,23 @@ function renderPIChart() {
         <td>${r.amount_kept > 0 ? pfx + '$' + Number(r.amount_kept).toLocaleString() : '—'}</td>
       </tr>
     `).join('');
+
+    const awardRow = showAward ? `
+      <tr style="background:#fffbeb;">
+        <td><strong>Researcher Awards</strong> <span style="font-size:11px;color:#d97706;font-weight:600;">Recognition</span></td>
+        <td class="amt">$${Number(awardTotal).toLocaleString()}</td>
+        <td>—</td>
+        <td>—</td>
+      </tr>` : '';
+
+    const scholRow = showSchol ? `
+      <tr style="background:#f5f3ff;">
+        <td><strong>Student Scholarships</strong> <span style="font-size:11px;color:#7c3aed;font-weight:600;">Recognition</span></td>
+        <td class="amt">$${Number(scholTotal).toLocaleString()}</td>
+        <td>—</td>
+        <td>—</td>
+      </tr>` : '';
+
+    tbody.innerHTML = piRows + awardRow + scholRow;
   }
 }

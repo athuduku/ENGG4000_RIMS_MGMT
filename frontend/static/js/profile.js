@@ -20,7 +20,7 @@ function toggleSupStudents(btn) {
   chevron.className = hidden ? 'bi bi-chevron-up' : 'bi bi-chevron-down';
   btn.innerHTML = hidden
     ? `<i class="bi bi-chevron-up" id="supChevron"></i> Show fewer`
-    : `<i class="bi bi-chevron-down" id="supChevron"></i> Show all {{ current_students|length }} students`;
+    : `<i class="bi bi-chevron-down" id="supChevron"></i> Show all ${STUDENT_COUNT} students`;
 }
 
 function saveBasicInfo() {
@@ -169,7 +169,7 @@ function toggleAwards(btn) {
   chevron.className = hidden ? 'bi bi-chevron-up' : 'bi bi-chevron-down';
   btn.innerHTML = hidden
     ? `<i class="bi bi-chevron-up" id="awardsChevron"></i> Show fewer`
-    : `<i class="bi bi-chevron-down" id="awardsChevron"></i> Show all {{ all_award_records|length }} awards`;
+    : `<i class="bi bi-chevron-down" id="awardsChevron"></i> Show all ${AWARD_COUNT} awards`;
 }
 
 function openSupEdit(id) {

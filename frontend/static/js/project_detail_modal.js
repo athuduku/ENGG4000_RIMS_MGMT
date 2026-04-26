@@ -52,7 +52,7 @@ function activateProjectTab(tabId) {
         pane.classList.toggle('active', pane.id === tabId)
     );
 
-    if (tabId === 'peopleTab') {
+    if (tabId === 'teamTab') {
         loadExternalMembers(currentProjectId);
         loadTaggedMembers(currentProjectId);
     }
@@ -81,7 +81,7 @@ function activateProjectTab(tabId) {
                   displayFundingRecords(
                       data.funding_records,
                       data.computed_total,
-                      window.currentProjectData?.funding_kept_by_unb
+                      data.funding_kept_by_unb
                   );
                   if (data.computed_total) {
                       setText('fundingTotalValue',    fmtMoney(data.computed_total));
@@ -161,8 +161,6 @@ function openProjectModal(projectData) {
   setVal('fundingReceivedInput', projectData.funding_received     || '');
   setVal('fundingStartInput',    projectData.start_date           || '');
   setVal('fundingEndInput',      projectData.end_date             || '');
-  setText('fundingOrgValue',      projectData.funding_organization || '—');
-  setText('fundingTypeValue',     projectData.funding_type         || '—');
   setText('fundingCurrencyValue', projectData.currency || 'CAD');
 
   // Kept by UNB
@@ -236,9 +234,7 @@ function openProjectModal(projectData) {
 
     document.getElementById('hqpSummary').innerHTML = 'Loading HQP...';
 
-    setTimeout(() => {
-      loadHQP(projectData);
-    }, 0);
+    loadHQP(projectData);
   }
 
   // Loading placeholders for the three deferred sections
@@ -394,15 +390,32 @@ function editFundingSummary() { hideEl('fundingSummaryDisplay'); showEl('funding
 function cancelEditFunding()  { hideEl('fundingSummaryEdit'); showEl('fundingSummaryDisplay'); }
 
 function saveFundingSummary() {
+  const total    = parseFloat(document.getElementById('fundingTotalInput').value || 0);
+  const received = parseFloat(document.getElementById('fundingReceivedInput').value || 0);
+
+  if (total < 0) {
+    showToast('Total funding cannot be negative.');
+    return;
+  }
+  if (received < 0) {
+    showToast('Awarded to IBME cannot be negative.');
+    return;
+  }
+  if (received > total && total > 0) {
+    showToast('Awarded to IBME cannot exceed total funding.');
+    return;
+  }
+
   const payload = {
     funding_organization: document.getElementById('fundingOrgInput').value.trim(),
     funding_type:         document.getElementById('fundingTypeInput').value.trim(),
-    currency:             document.getElementById('fundingCurrencyInput').value || 'CAD',  // ← add
+    currency:             document.getElementById('fundingCurrencyInput').value || 'CAD',
     total_funding:        document.getElementById('fundingTotalInput').value    || null,
     funding_received:     document.getElementById('fundingReceivedInput').value || null,
     start_date:           document.getElementById('fundingStartInput').value    || null,
     end_date:             document.getElementById('fundingEndInput').value      || null,
   };
+
 
   fetch(`/api/projects/${currentProjectId}/update-funding/`, {
     method: 'POST',
@@ -437,10 +450,10 @@ function saveFundingSummary() {
         }
         cancelEditFunding();
       } else {
-        alert('Error saving: ' + (data.error || 'Unknown error'));
+        showToast('Error saving: ' + (data.error || 'Unknown error'));
       }
     })
-    .catch(() => alert('Error saving funding'));
+    .catch(() => showToast('Error saving funding'));
 }
 
 // ── Kept by UNB ───────────────────────────────────────────────
@@ -459,10 +472,10 @@ function saveKeptByUnb() {
         hideEl('keptByUnbEdit');
         showEl('keptByUnbDisplay');
       } else {
-        alert('Error saving: ' + (data.error || 'Unknown error'));
+        showToast('Error saving: ' + (data.error || 'Unknown error'));
       }
     })
-    .catch(() => alert('Error saving kept by IBME'));
+    .catch(() => showToast('Error saving kept by IBME'));
 }
 
 // ── Conception ────────────────────────────────────────────────
@@ -482,10 +495,10 @@ function saveConception() {
         setText('projectConception', conception || 'No conception notes yet.');
         cancelEditConception();
       } else {
-        alert('Error saving conception: ' + (data.error || 'Unknown error'));
+        showToast('Error saving conception: ' + (data.error || 'Unknown error'));
       }
     })
-    .catch(() => alert('Error saving conception'));
+    .catch(() => showToast('Error saving conception'));
 }
 
 // ── Next steps ────────────────────────────────────────────────
@@ -505,10 +518,10 @@ function saveNextSteps() {
         setText('projectNextSteps', nextSteps || 'No next steps defined yet.');
         cancelEditNextSteps();
       } else {
-        alert('Error saving next steps');
+        showToast('Error saving next steps');
       }
     })
-    .catch(() => alert('Error saving next steps'));
+    .catch(() => showToast('Error saving next steps'));
 }
 
 // ── Close modal ───────────────────────────────────────────────
@@ -586,10 +599,10 @@ document.addEventListener('DOMContentLoaded', function () {
           setText('projectIPActivities', ip || 'No IP activities recorded.');
           hideEl('ipEdit'); showEl('ipDisplay');
         } else {
-          alert('Error saving IP activities: ' + (data.error || 'Unknown error'));
+          showToast('Error saving IP activities: ' + (data.error || 'Unknown error'));
         }
       })
-      .catch(() => alert('Error saving IP activities'));
+      .catch(() => showToast('Error saving IP activities'));
   });
 
   // Status
@@ -602,7 +615,7 @@ document.addEventListener('DOMContentLoaded', function () {
     })
       .then(r => r.json())
       .then(d => {
-        if (!d.success) { alert(d.error || 'Failed to update status'); return; }
+        if (!d.success) { showToast(d.error || 'Failed to update status'); return; }
 
         invalidateCache(currentProjectId);
 
@@ -636,7 +649,7 @@ document.addEventListener('DOMContentLoaded', function () {
           if (inlineSelect) inlineSelect.value = status;
         }
       })
-      .catch(() => alert('Failed to update status'));
+      .catch(() => showToast('Failed to update status'));
   });
 
   // Publication search
@@ -729,10 +742,10 @@ function tagMember(userId) {
         document.getElementById('hqpSearchResults').style.display = 'none';
         loadTaggedMembers(currentProjectId);
       } else {
-        alert('Error tagging member: ' + (data.error || 'Unknown error'));
+        showToast('Error tagging member: ' + (data.error || 'Unknown error'));
       }
     })
-    .catch(() => alert('Error tagging member'));
+    .catch(() => showToast('Error tagging member'));
 }
 
 function untagMember(userId) {
@@ -745,10 +758,10 @@ function untagMember(userId) {
         invalidateCache(currentProjectId);
         loadTaggedMembers(currentProjectId);
       } else {
-        alert('Error removing member: ' + (data.error || 'Unknown error'));
+        showToast('Error removing member: ' + (data.error || 'Unknown error'));
       }
     })
-    .catch(() => alert('Error removing member'));
+    .catch(() => showToast('Error removing member'));
 }
 
 function loadTaggedMembers(projectId) {
@@ -988,8 +1001,8 @@ function deleteProjectFromModal() {
     method: 'POST', headers: { 'X-CSRFToken': csrf },
   })
     .then(r => r.json())
-    .then(d => { if (d.success) { location.reload(); } else { alert(d.error || 'Delete failed'); } })
-    .catch(() => alert('Delete failed. Please try again.'));
+    .then(d => { if (d.success) { location.reload(); } else { showToast(d.error || 'Delete failed'); } })
+    .catch(() => showToast('Delete failed. Please try again.'));
 }
 
 // ── External / CCV collaborators ──────────────────────────────
@@ -1065,10 +1078,10 @@ function addExternalMember() {
         document.getElementById('newMemberPartnerType').value = 'academic';
         loadExternalMembers(currentProjectId);
       } else {
-        alert(data.error || 'Error adding member');
+        showToast(data.error || 'Error adding member');
       }
     })
-    .catch(() => alert('Error adding member'));
+    .catch(() => showToast('Error adding member'));
 }
 
 function removeExternalMember(memberId) {
@@ -1081,8 +1094,34 @@ function removeExternalMember(memberId) {
         invalidateCache(currentProjectId);
         loadExternalMembers(currentProjectId);
       } else {
-        alert(data.error || 'Error removing member');
+        showToast(data.error || 'Error removing member');
       }
     })
-    .catch(() => alert('Error removing member'));
+    .catch(() => showToast('Error removing member'));
+}
+
+function showToast(message, type = 'error') {
+  const existing = document.getElementById('projectToast');
+  if (existing) existing.remove();
+
+  const toast = document.createElement('div');
+  toast.id = 'projectToast';
+  toast.textContent = message;
+  toast.style.cssText = `
+    position: fixed;
+    bottom: 24px;
+    right: 24px;
+    padding: 12px 20px;
+    border-radius: 8px;
+    font-size: 14px;
+    font-weight: 500;
+    z-index: 9999;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+    background: ${type === 'success' ? '#dcfce7' : '#fee2e2'};
+    color: ${type === 'success' ? '#166534' : '#991b1b'};
+    border: 1px solid ${type === 'success' ? '#86efac' : '#fca5a5'};
+    transition: opacity 0.3s;
+  `;
+  document.body.appendChild(toast);
+  setTimeout(() => { toast.style.opacity = '0'; setTimeout(() => toast.remove(), 300); }, 3000);
 }

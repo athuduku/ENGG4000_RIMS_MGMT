@@ -167,12 +167,12 @@
                   <br>
                     <div>
                       <label class="detail-label">Total Project Funding ($)</label>
-                      <input type="number" id="fundingTotalInput" class="detail-input" placeholder="0">
+                      <input type="number" id="fundingTotalInput" class="detail-input" placeholder="0" min="0">
                       <div style="font-size:11px;color:#9ca3af;margin-top:2px;">Overrides CCV value on save</div>
                     </div>
                     <div>
                       <label class="detail-label">Awarded to IBME ($)</label>
-                      <input type="number" id="fundingReceivedInput" class="detail-input" placeholder="0">
+                      <input type="number" id="fundingReceivedInput" class="detail-input" placeholder="0" min="0">
                     </div>
                     <div>
                       <label class="detail-label">Start Date</label>
@@ -202,7 +202,7 @@
                   </div>
                   <div id="keptByUnbEdit" style="display:none;">
                     <input type="number" id="keptByUnbInput" class="detail-input"
-                          placeholder="Enter amount kept by UNB...">
+                          placeholder="Enter amount kept by UNB..." min="0">
                     <div class="detail-actions">
                       <button class="btn-save" id="saveKeptByUnbBtn">Save</button>
                       <button class="btn-cancel" id="cancelKeptByUnbBtn">Cancel</button>

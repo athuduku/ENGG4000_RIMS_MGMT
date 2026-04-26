@@ -20,14 +20,32 @@ document.getElementById("loginForm").addEventListener("submit", async function(e
     if (data.redirect) {
       window.location.href = data.redirect;
     } else {
-      alert(data.error || "Invalid credentials.");
+      showError(data.error || "Invalid credentials.");
     }
   } catch (err) {
     console.error("Login error:", err);
-    alert("Login failed. Please try again later.");
+    showError("Login failed. Please try again later.");
   }
 });
 
 function showForgotAlert() {
-  alert('To reset your password, please contact your IBME administrator.');
+  showInfo('To reset your password, please contact your IBME administrator.');
+}
+
+function showError(message) {
+  const errorDiv = document.getElementById("loginError");
+  errorDiv.textContent = message;
+  errorDiv.style.display = "block";
+  errorDiv.style.background = "#fee2e2";
+  errorDiv.style.color = "#991b1b";
+  errorDiv.style.borderColor = "#fca5a5";
+}
+
+function showInfo(message) {
+  const errorDiv = document.getElementById("loginError");
+  errorDiv.textContent = message;
+  errorDiv.style.display = "block";
+  errorDiv.style.background = "#eff6ff";
+  errorDiv.style.color = "#1e40af";
+  errorDiv.style.borderColor = "#bfdbfe";
 }

@@ -30,7 +30,9 @@ from .models import (
     SupervisionRecord, SupervisorRequest, StudentNotification, AuditLog,
 )
 
-from config.views import log_action, generate_temp_password, reverse_link_supervision
+from config.utils import log_action
+from config.views.auth import generate_temp_password
+from config.services.ccv_parser import reverse_link_supervision
 from django.utils import timezone
 from datetime import timedelta
 

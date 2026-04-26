@@ -784,6 +784,11 @@
       </div>
     </div>
 
+    <script>
+      const STUDENT_COUNT = {{ current_students|length }};
+      const AWARD_COUNT   = {{ all_award_records|length }};
+    </script>
+
     <script src="{% static 'js/dashboard.js' %}"></script>
     <script src="{% static 'js/profile.js' %}"></script>
   </body>
