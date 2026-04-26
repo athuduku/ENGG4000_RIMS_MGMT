@@ -24,14 +24,14 @@ A Django 5.2+ PostgreSQL web application built for the UNB Institute of Biomedic
 ENGG4000_RIMS_MGMT/
 ├── .github/
 │   └── workflows/
-│       └── ci.yml                  # GitHub Actions CI pipeline
+│       └── ci.yml                          # GitHub Actions CI pipeline
 ├── backend/
-│   ├── .env                        # Environment variables (not committed)
+│   ├── .env                                # Environment variables (not committed)
 │   ├── manage.py
 │   ├── requirements.txt
 │   ├── scripts/
-│   │   └── debug_xml.py/           # Dev utility (not used in production)             
-│   ├── config/                     # Main Django application
+│   │   └── debug_xml.py/                   # Dev utility (not used in production)             
+│   ├── config/                             # Main Django application
 │   │   ├── admin.py
 │   │   ├── forms.py
 │   │   ├── middleware.py
@@ -39,9 +39,10 @@ ENGG4000_RIMS_MGMT/
 │   │   ├── settings.py
 │   │   ├── urls.py
 │   │   ├── utils.py
-│   │   ├── views.py
+│   │   ├── services/                       # Business logic layer
+│   │   ├── views/                          # Views split by domain
 │   │   ├── wsgi.py / asgi.py
-│   │   ├── migrations/             # Database migrations (0001 – 0039)
+│   │   ├── migrations/                     # Database migrations
 │   │   ├── templatetags/
 │   │   │   └── auth_extras.py
 │   │   └── tests/
@@ -52,14 +53,14 @@ ENGG4000_RIMS_MGMT/
 │   │       ├── test_models.py
 │   │       ├── test_permissions.py
 │   │       └── test_upload_and_api.py
-│   └── venv/                       # Virtual environment (not committed)
+│   └── venv/                               # Virtual environment (not committed)
 ├── frontend/
 │   ├── admin/
-│   │   └── base_site.html          # Custom Django admin branding
+│   │   └── base_site.html                  # Custom Django admin branding
 │   ├── emails/
 │   │   ├── password_reset_email.html
 │   │   └── password_reset_subject.txt
-│   ├── Pages/                      # All HTML templates
+│   ├── Pages/                              # All HTML templates
 │   │   ├── dashboard.html
 │   │   ├── home.html
 │   │   ├── notifications.html
@@ -101,9 +102,9 @@ ENGG4000_RIMS_MGMT/
 │   │       ├── set_password.html
 │   │       └── signup.html
 │   └── static/
-│       ├── assets/                 # Images and logos
-│       ├── css/                    # Per-page stylesheets
-│       └── js/                     # Per-page JavaScript
+│       ├── assets/                             # Images and logos
+│       ├── css/                                # Per-page stylesheets
+│       └── js/                                 # Per-page JavaScript
 └── README.md
 ```
 
