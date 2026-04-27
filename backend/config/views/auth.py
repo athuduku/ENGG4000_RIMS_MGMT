@@ -211,6 +211,14 @@ def login_2fa_view(request):
     except User.DoesNotExist:
         return redirect('login')
 
+    # ── 2FA attempt limit ─────────────────────────────────────
+    attempts = request.session.get('2fa_attempts', 0)
+    if attempts >= 5:
+        request.session.flush()
+        log_action(request, 'login_failed',
+                   summary=f'{user.get_full_name()} exceeded 2FA attempts and session cleared')
+        return redirect('login')
+
     error = None
 
     if request.method == 'POST':
@@ -241,14 +249,16 @@ def login_2fa_view(request):
         if verified:
             request.session.pop('pre_2fa_user_id', None)
             request.session.pop('pre_2fa_email', None)
+            request.session.pop('2fa_attempts', None)
             login(request, user)
             log_action(request, 'user_login', target=user,
                        summary=f'{user.get_full_name()} logged in with 2FA')
             return redirect('dashboard')
         else:
+            request.session['2fa_attempts'] = attempts + 1
             log_action(request, 'login_failed',
-                       summary=f'{user.get_full_name()} failed 2FA attempt')
-            error = 'Invalid code. Please try again.'
+                       summary=f'{user.get_full_name()} failed 2FA attempt ({attempts + 1}/5)')
+            error = f'Invalid code. Please try again. ({attempts + 1}/5 attempts)'
 
     return render(request, 'Pages/User_Auth/login_2fa.html', {
         'error': error,

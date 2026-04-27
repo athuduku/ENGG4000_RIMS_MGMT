@@ -1390,6 +1390,8 @@ def funding_analysis_report(request):
 @admin_required
 def activity_report(request):
     from django.core.paginator import Paginator
+    from django.db.models import Count, Q
+    from collections import defaultdict
 
     current_year           = date.today().year
     current_month          = date.today().month
@@ -1406,6 +1408,7 @@ def activity_report(request):
     selected_pub_type  = request.GET.get('pub_type', '')
     selected_status    = request.GET.get('grant_status', '')
     active_tab         = request.GET.get('tab', 'activities')
+    group_by_conf      = request.GET.get('group') == '1'
 
     try:
         year_int = int(selected_year)
@@ -1416,134 +1419,41 @@ def activity_report(request):
     end_dt     = date(year_int + 1, 8, 31)
     year_label = f"{year_int}/{str(year_int+1)[-2:]} (Sep {year_int} – Aug {year_int+1})"
 
-    # ── Activities ────────────────────────────────────────────
-    activities = Activity.objects.filter(
-        date__gte=start_dt, date__lte=end_dt,
-        is_active=True,
-    ).select_related(
-        'researcher__user', 'conference'
-    ).prefetch_related(
-        'objectives', 'tagged_users'  # ← add tagged_users here
-    ).order_by('-date')
-    
+    # ── Base querysets (filters only, no select/prefetch) ────
+    activities_base = Activity.objects.filter(
+        date__gte=start_dt, date__lte=end_dt, is_active=True,
+    )
     if selected_category:
-        activities = activities.filter(category=selected_category)
+        activities_base = activities_base.filter(category=selected_category)
     if selected_user_type:
-        activities = activities.filter(researcher__user__user_type=selected_user_type)
+        activities_base = activities_base.filter(researcher__user__user_type=selected_user_type)
 
-    # ── Conference grouping ───────────────────────────────────
-    group_by_conf     = request.GET.get('group') == '1'
-    grouped_conferences = []
-
-    if group_by_conf:
-        from collections import defaultdict
-
-        conf_map = defaultdict(lambda: {
-            'conference':       None,
-            'name':             '',
-            'year':             None,
-            'location':         '',
-            'attendees':        [],
-            'seen_users':       set(),
-            'student_count':    0,
-            'researcher_count': 0,
-            'msc_count':        0,
-            'phd_count':        0,
-            'other_count':      0,
-            'earliest_date':    None,
-        })
-
-        # use start_dt from selected year
-        conf_activities = activities.filter(
-            category='conference',
-            date__gte=start_dt,
-        ).select_related('researcher__user', 'conference')
-
-        for a in conf_activities:
-            if a.conference_id:
-                key = f'conf-{a.conference_id}'
-            else:
-                key = f'no-conf-{a.title}-{a.date}'
-
-            entry = conf_map[key]
-
-            if a.conference and not entry['conference']:
-                entry['conference'] = a.conference
-                entry['name']       = a.conference.name
-                entry['year']       = a.conference.year
-                entry['location']   = a.conference.location or ''
-            elif not entry['name']:
-                entry['name'] = a.title
-
-            user_id = a.researcher.user.id
-
-            if user_id not in entry['seen_users']:
-                entry['seen_users'].add(user_id)
-                utype = a.researcher.user.user_type
-
-                entry['attendees'].append({
-                    'name':      a.researcher.user.get_full_name(),
-                    'user_type': utype,
-                    'invited':   a.invited,
-                    'keynote':   a.keynote,
-                })
-
-                if utype == 'student':
-                    entry['student_count'] += 1
-
-                    
-                    try:
-                        degree = a.researcher.user.student_profile.degree_level
-                        if degree == 'msc':
-                            entry['msc_count'] += 1
-                        elif degree == 'phd':
-                            entry['phd_count'] += 1
-                        else:
-                            entry['other_count'] += 1
-                    except Exception:
-                        entry['other_count'] += 1
-                else:
-                    entry['researcher_count'] += 1
-
-            if not entry['earliest_date'] or (a.date and a.date < entry['earliest_date']):
-                entry['earliest_date'] = a.date
-
-        grouped_conferences = sorted(
-            conf_map.values(),
-            key=lambda x: x['earliest_date'] or date.min,
-            reverse=True,
-        )
-
-    # ── Publications ──────────────────────────────────────────
-    publications = Publication.objects.filter(
-        publication_date__gte=start_dt,
-        publication_date__lte=end_dt,
-        is_active=True,
-    ).select_related('researcher__user').order_by('-publication_date')
-
+    publications_base = Publication.objects.filter(
+        publication_date__gte=start_dt, publication_date__lte=end_dt, is_active=True,
+    )
     if selected_pub_type:
-        publications = publications.filter(publication_type=selected_pub_type)
+        publications_base = publications_base.filter(publication_type=selected_pub_type)
 
-    # ── Grants ────────────────────────────────────────────────
-    grants = Project.objects.filter(
-        start_date__gte=start_dt,
-        start_date__lte=end_dt,
-        is_deleted=False,
-    ).select_related('researcher__user').prefetch_related(
-        'funding_breakdown'
-    ).order_by('-start_date')
-
+    grants_base = Project.objects.filter(
+        start_date__gte=start_dt, start_date__lte=end_dt, is_deleted=False,
+    )
     if selected_status:
-        grants = grants.filter(status=selected_status)
+        grants_base = grants_base.filter(status=selected_status)
 
-    # ── CSV exports ───────────────────────────────────────────
+    # ── Tab badge counts (cheap, single query each) ──────────
+    total_count = activities_base.count()
+    pub_count   = publications_base.count()
+    grant_count = grants_base.count()
+
+    # ── CSV export (early return, only the relevant tab) ────
     if request.GET.get('export') == 'csv':
         if active_tab == 'publications':
+            qs = publications_base.select_related('researcher__user').order_by('-publication_date')
             response = HttpResponse(content_type='text/csv')
             response['Content-Disposition'] = f'attachment; filename="publications_{selected_year}.csv"'
             writer = csv.writer(response)
             writer.writerow(['Title', 'Type', 'Status', 'Journal', 'Authors', 'Date', 'DOI', 'Researcher'])
-            for p in publications:
+            for p in qs:
                 writer.writerow([
                     p.title, p.get_publication_type_display(),
                     p.get_status_display() if p.status else '',
@@ -1554,6 +1464,7 @@ def activity_report(request):
             return response
 
         elif active_tab == 'grants':
+            qs = grants_base.select_related('researcher__user').order_by('-start_date')
             response = HttpResponse(content_type='text/csv')
             response['Content-Disposition'] = f'attachment; filename="grants_{selected_year}.csv"'
             writer = csv.writer(response)
@@ -1562,29 +1473,25 @@ def activity_report(request):
                 'Total Funding', 'Awarded to UNB', 'Kept by UNB',
                 'Start', 'End', 'PI',
             ])
-
-            for g in grants:
+            for g in qs:
                 writer.writerow([
-                    g.title,
-                    g.funding_organization or '',
-                    g.program_name or '',
+                    g.title, g.funding_organization or '', g.program_name or '',
                     g.get_role_display() if g.role else '',
                     g.get_status_display() if g.status else '',
-                    g.total_funding or '',
-                    g.funding_received or '',
+                    g.total_funding or '', g.funding_received or '',
                     g.funding_kept_by_unb or '',
-                    g.start_date or '',
-                    g.end_date or '',
+                    g.start_date or '', g.end_date or '',
                     g.researcher.user.get_full_name(),
                 ])
             return response
 
-        else:
+        else:  # activities
+            qs = activities_base.select_related('researcher__user').order_by('-date')
             response = HttpResponse(content_type='text/csv')
             response['Content-Disposition'] = f'attachment; filename="activities_{selected_year}.csv"'
             writer = csv.writer(response)
             writer.writerow(['Title', 'Category', 'Type', 'Person', 'Email', 'Role', 'Date', 'Description'])
-            for a in activities:
+            for a in qs:
                 writer.writerow([
                     a.title,
                     a.get_category_display() if hasattr(a, 'get_category_display') else a.category,
@@ -1597,38 +1504,138 @@ def activity_report(request):
                 ])
             return response
 
-    # ── Stats ─────────────────────────────────────────────────
-    total_count      = activities.count()
-    conference_count = activities.filter(category='conference').count()
-    km_count         = activities.filter(category='knowledge_mobilization').count()
-    media_count      = activities.filter(category='media').count()
-    researcher_count = activities.filter(
-        researcher__user__user_type='researcher').values('researcher').distinct().count()
-    student_count    = activities.filter(
-        researcher__user__user_type='student').values('researcher').distinct().count()
-
-    
-    # ── Strategic objectives breakdown ───────────────────────
+    # ── Defaults so the template never KeyErrors ─────────────
+    activities_page = publications_page = grants_page = None
+    page_start = page_end = 0
+    conference_count = km_count = media_count = 0
+    researcher_count = student_count = 0
+    awarded_count = submitted_count = rejected_count = 0
     objective_counts = []
-    for obj in StrategicObjective.objects.all():
-        count = obj.activities.filter(
-            date__gte=start_dt,
-            date__lte=end_dt,
-            is_active=True,
-        ).count()
-        if count > 0:
-            objective_counts.append({'name': obj.name, 'count': count})
+    grouped_conferences = []
 
-    paginator  = Paginator(activities, 25)
-    page_obj   = paginator.get_page(request.GET.get('page', 1))
-    page_start = (page_obj.number - 1) * 25 + 1
-    page_end   = min(page_obj.number * 25, total_count)
+    # ── Heavy work ONLY for active tab ───────────────────────
+    if active_tab == 'activities':
+        # 6 counts → 1 aggregate query
+        kpis = activities_base.aggregate(
+            conf=Count('id', filter=Q(category='conference')),
+            km=Count('id', filter=Q(category='knowledge_mobilization')),
+            media=Count('id', filter=Q(category='media')),
+            researchers=Count('researcher',
+                filter=Q(researcher__user__user_type='researcher'), distinct=True),
+            students=Count('researcher',
+                filter=Q(researcher__user__user_type='student'), distinct=True),
+        )
+        conference_count = kpis['conf'] or 0
+        km_count         = kpis['km'] or 0
+        media_count      = kpis['media'] or 0
+        researcher_count = kpis['researchers'] or 0
+        student_count    = kpis['students'] or 0
 
-    pub_paginator = Paginator(publications, 25)
-    pub_page_obj  = pub_paginator.get_page(request.GET.get('pub_page', 1))
+        # N+1 loop → 1 annotated query
+        objective_counts = list(
+            StrategicObjective.objects
+                .annotate(count=Count(
+                    'activities',
+                    filter=Q(
+                        activities__date__gte=start_dt,
+                        activities__date__lte=end_dt,
+                        activities__is_active=True,
+                    ),
+                ))
+                .filter(count__gt=0)
+                .values('name', 'count')
+        )
 
-    grant_paginator = Paginator(grants, 25)
-    grant_page_obj  = grant_paginator.get_page(request.GET.get('grant_page', 1))
+        if group_by_conf:
+            conf_map = defaultdict(lambda: {
+                'conference': None, 'name': '', 'year': None, 'location': '',
+                'attendees': [], 'seen_users': set(),
+                'student_count': 0, 'researcher_count': 0,
+                'msc_count': 0, 'phd_count': 0, 'other_count': 0,
+                'earliest_date': None,
+            })
+
+            conf_activities = activities_base.filter(
+                category='conference'
+            ).select_related(
+                'researcher__user', 'researcher__user__student_profile', 'conference'
+            )
+
+            for a in conf_activities:
+                key = f'conf-{a.conference_id}' if a.conference_id else f'no-conf-{a.title}-{a.date}'
+                entry = conf_map[key]
+                if a.conference and not entry['conference']:
+                    entry['conference'] = a.conference
+                    entry['name']       = a.conference.name
+                    entry['year']       = a.conference.year
+                    entry['location']   = a.conference.location or ''
+                elif not entry['name']:
+                    entry['name'] = a.title
+
+                user_id = a.researcher.user.id
+                if user_id not in entry['seen_users']:
+                    entry['seen_users'].add(user_id)
+                    utype = a.researcher.user.user_type
+                    entry['attendees'].append({
+                        'name': a.researcher.user.get_full_name(),
+                        'user_type': utype,
+                        'invited': a.invited, 'keynote': a.keynote,
+                    })
+                    if utype == 'student':
+                        entry['student_count'] += 1
+                        try:
+                            degree = a.researcher.user.student_profile.degree_level
+                            if degree == 'msc':   entry['msc_count'] += 1
+                            elif degree == 'phd': entry['phd_count'] += 1
+                            else:                 entry['other_count'] += 1
+                        except Exception:
+                            entry['other_count'] += 1
+                    else:
+                        entry['researcher_count'] += 1
+
+                if not entry['earliest_date'] or (a.date and a.date < entry['earliest_date']):
+                    entry['earliest_date'] = a.date
+
+            grouped_conferences = sorted(
+                conf_map.values(),
+                key=lambda x: x['earliest_date'] or date.min,
+                reverse=True,
+            )
+        else:
+            activities_qs = activities_base.select_related(
+                'researcher__user', 'conference'
+            ).prefetch_related(
+                'objectives', 'tagged_users'
+            ).order_by('-date')
+
+            paginator       = Paginator(activities_qs, 25)
+            activities_page = paginator.get_page(request.GET.get('page', 1))
+            page_start = (activities_page.number - 1) * 25 + 1
+            page_end   = min(activities_page.number * 25, total_count)
+
+    elif active_tab == 'publications':
+        publications_qs = publications_base.select_related(
+            'researcher__user'
+        ).order_by('-publication_date')
+        pub_paginator     = Paginator(publications_qs, 25)
+        publications_page = pub_paginator.get_page(request.GET.get('pub_page', 1))
+
+    elif active_tab == 'grants':
+        # 4 counts → 1 aggregate query
+        gkpi = grants_base.aggregate(
+            awarded=Count('id', filter=Q(status='awarded')),
+            submitted=Count('id', filter=Q(status='submitted')),
+            rejected=Count('id', filter=Q(status='rejected')),
+        )
+        awarded_count   = gkpi['awarded'] or 0
+        submitted_count = gkpi['submitted'] or 0
+        rejected_count  = gkpi['rejected'] or 0
+
+        grants_qs = grants_base.select_related(
+            'researcher__user'
+        ).prefetch_related('funding_breakdown').order_by('-start_date')
+        grant_paginator = Paginator(grants_qs, 25)
+        grants_page     = grant_paginator.get_page(request.GET.get('grant_page', 1))
 
     export_params = (
         f"year={selected_year}&category={selected_category}"
@@ -1637,9 +1644,9 @@ def activity_report(request):
     )
 
     return render(request, 'Pages/reports/activity_report.html', {
-        'activities':         page_obj,
-        'publications':       pub_page_obj,
-        'grants':             grant_page_obj,
+        'activities':         activities_page,
+        'publications':       publications_page,
+        'grants':             grants_page,
         'year_options':       year_options,
         'selected_year':      selected_year,
         'selected_category':  selected_category,
@@ -1654,17 +1661,17 @@ def activity_report(request):
         'media_count':        media_count,
         'researcher_count':   researcher_count,
         'student_count':      student_count,
-        'pub_count':          publications.count(),
-        'grant_count':        grants.count(),
-        'awarded_count':      grants.filter(status='awarded').count(),
-        'submitted_count':    grants.filter(status='submitted').count(),
-        'rejected_count':     grants.filter(status='rejected').count(),
+        'pub_count':          pub_count,
+        'grant_count':        grant_count,
+        'awarded_count':      awarded_count,
+        'submitted_count':    submitted_count,
+        'rejected_count':     rejected_count,
         'page_start':         page_start,
         'page_end':           page_end,
         'export_params':      export_params,
         'group_by_conf':      group_by_conf,
         'grouped_conferences': grouped_conferences,
-        'objective_counts': objective_counts,
+        'objective_counts':   objective_counts,
     })
 
 
