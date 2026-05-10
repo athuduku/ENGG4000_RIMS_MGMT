@@ -26,7 +26,7 @@
               <span><i class="bi bi-funnel"></i> Filters</span>
             </div>
             <div class="filter-item">
-              <input type="checkbox" id="filter-all" onchange="resetFilters()" checked>
+              <input type="checkbox" id="filter-all" checked>
               <label for="filter-all">All Activities</label>
             </div>
           </div>
@@ -44,14 +44,14 @@
           <div class="sidebar-section">
             <div class="sidebar-title">Year</div>
             <div class="year-range">
-              <input type="number" id="year-from" placeholder="From" min="1900" max="2099" onchange="filterActivities()">
+              <input type="number" id="year-from" placeholder="From" min="1900" max="2099">
               <span class="year-separator">-</span>
-              <input type="number" id="year-to" placeholder="To" min="1900" max="2099" onchange="filterActivities()">
+              <input type="number" id="year-to" placeholder="To" min="1900" max="2099">
             </div>
           </div>
 
           <div class="sidebar-section">
-            <button onclick="clearAllFilters()" class="clear-filters-btn">
+            <button class="clear-filters-btn">
               <i class="bi bi-x-circle"></i> Clear All Filters
             </button>
           </div>
@@ -63,11 +63,11 @@
           <div class="search-section">
             <div class="search-box">
               <i class="bi bi-search"></i>
-              <input type="text" id="search-input" placeholder="Search by title, type, or event..." onkeyup="filterActivities()">
+              <input type="text" id="search-input" placeholder="Search by title, type, or event...">
             </div>
             <div class="sort-control">
               <span class="sort-label">Sort by:</span>
-              <select class="sort-select" id="sort-by" onchange="filterActivities()">
+              <select class="sort-select" id="sort-by">
                 <option value="recent">Most Recent</option>
                 <option value="oldest">Oldest</option>
                 <option value="title-asc">Title (A-Z)</option>
@@ -181,9 +181,9 @@
             </div>
 
             <div id="pagination-container" class="pagination-container">
-              <button class="pagination-btn" id="prev-btn" onclick="previousPage()">← Previous</button>
+              <button class="pagination-btn" id="prev-btn">← Previous</button>
               <span class="pagination-info" id="page-info">Page 1</span>
-              <button class="pagination-btn" id="next-btn" onclick="nextPage()">Next →</button>
+              <button class="pagination-btn" id="next-btn">Next →</button>
             </div>
 
           {% else %}
@@ -200,7 +200,7 @@
   </div>
 
   {% include "./activity_detail_modal.html" %}
-
+  <script src="{% static 'js/pagination.js' %}"></script>
   <script src="{% static 'js/activities.js' %}"></script>
   <script src="{% static 'js/activity_detail_modal.js' %}"></script>
   <script>

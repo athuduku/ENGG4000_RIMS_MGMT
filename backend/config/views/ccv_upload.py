@@ -18,6 +18,10 @@ from config.models import (
 )
 
 
+# TODO: This view processes XML files synchronously.
+# For production, bulk processing should be moved to a Celery background task.
+# A Celery-ready task (process_ccv_async) has been drafted in services/ccv_parser.py.
+# Requires Redis + Celery workers to be configured at deploy time.
 @ratelimit(key='ip', rate='2/m', block=True)
 @login_required(login_url='login')
 @require_http_methods(["POST"])
@@ -129,7 +133,6 @@ def bulk_upload(request):
 @require_http_methods(["POST"])
 def student_upload_ccv(request):
 
-    # Role check
     if request.user.user_type != "student":
         return JsonResponse({'success': False, 'error': 'Students only'}, status=403)
 
@@ -139,11 +142,9 @@ def student_upload_ccv(request):
 
     file_obj = files[0]
 
-    # File type check
     if file_obj.content_type not in ['text/xml', 'application/xml']:
         return JsonResponse({'error': 'Invalid file type'}, status=400)
 
-    # File size check
     if file_obj.size > 5 * 1024 * 1024:
         return JsonResponse({'success': False, 'error': 'File too large (max 5MB)'}, status=400)
 
@@ -152,23 +153,17 @@ def student_upload_ccv(request):
         tree = ET.parse(file_obj)
         xml_root = tree.getroot()
 
-        # remove namespaces
         for elem in xml_root.iter():
             if '}' in elem.tag:
                 elem.tag = elem.tag.split('}', 1)[1]
 
-        # Validate CCV format
         if "generic-cv" not in xml_root.tag:
             return JsonResponse({'success': False, 'error': 'Invalid CCV format'}, status=400)
-        
-        is_valid, error = validate_ccv_structure(xml_root, user_type='student')
-        if not is_valid:
-            return JsonResponse({'success': False, 'error': error}, status=400)
 
     except ET.ParseError as e:
         return JsonResponse({'success': False, 'error': f'Invalid XML: {e}'}, status=400)
 
-    # ── Validate ownership ───────────────────────
+    # ── Validate ownership before processing ────
     xml_email_field = xml_root.find('.//field[@label="Email Address"]/value')
 
     if xml_email_field is None or not xml_email_field.text:
@@ -177,14 +172,16 @@ def student_upload_ccv(request):
             'error': 'Could not verify CCV ownership'
         }, status=403)
 
-    xml_email = xml_email_field.text.strip().lower()
-    user_email = request.user.email.strip().lower()
-
-    if xml_email != user_email:
+    if xml_email_field.text.strip().lower() != request.user.email.strip().lower():
         return JsonResponse({
             'success': False,
-            'error': 'This CCV belongs to a different user'
+            'error': 'CCV ownership could not be verified'
         }, status=403)
+
+    # ── Validate CCV structure ───────────────────
+    is_valid, error = validate_ccv_structure(xml_root, user_type='student')
+    if not is_valid:
+        return JsonResponse({'success': False, 'error': error}, status=400)
 
     # ── Process XML ──────────────────────────────
     try:
@@ -197,7 +194,7 @@ def student_upload_ccv(request):
             details={
                 'activities':   result['activities'],
                 'publications': result['publications'],
-                'recognitions': result['recognitions'], 
+                'recognitions': result['recognitions'],
             }
         )
 
@@ -238,11 +235,9 @@ def researcher_upload_ccv(request):
 
     file_obj = files[0]
 
-    # File type check
     if file_obj.content_type not in ['text/xml', 'application/xml']:
         return JsonResponse({'error': 'Invalid file type'}, status=400)
 
-    # File size check
     if file_obj.size > 5 * 1024 * 1024:
         return JsonResponse({'success': False, 'error': 'File too large'}, status=400)
 
@@ -251,23 +246,17 @@ def researcher_upload_ccv(request):
         tree = ET.parse(file_obj)
         xml_root = tree.getroot()
 
-        # remove namespaces
         for elem in xml_root.iter():
             if '}' in elem.tag:
                 elem.tag = elem.tag.split('}', 1)[1]
 
-        # Validate CCV structure (AFTER parsing)
         if "generic-cv" not in xml_root.tag:
             return JsonResponse({'success': False, 'error': 'Invalid CCV format'}, status=400)
-
-        is_valid, error = validate_ccv_structure(xml_root, user_type='researcher')
-        if not is_valid:
-            return JsonResponse({'success': False, 'error': error}, status=400)
 
     except ET.ParseError as e:
         return JsonResponse({'success': False, 'error': f'Invalid XML: {e}'}, status=400)
 
-    # ── Validate email ownership ─────────────────
+    # ── Validate ownership before processing ────
     xml_email_field = xml_root.find('.//field[@label="Email Address"]/value')
 
     if xml_email_field is None or not xml_email_field.text:
@@ -279,15 +268,20 @@ def researcher_upload_ccv(request):
     if xml_email_field.text.strip().lower() != request.user.email.strip().lower():
         return JsonResponse({
             'success': False,
-            'error': 'This CCV belongs to a different user.'
+            'error': 'CCV ownership could not be verified.'
         }, status=403)
+
+    # ── Validate CCV structure ───────────────────
+    is_valid, error = validate_ccv_structure(xml_root, user_type='researcher')
+    if not is_valid:
+        return JsonResponse({'success': False, 'error': error}, status=400)
 
     # ── Process XML ──────────────────────────────
     try:
         researcher, _ = ResearcherProfile.objects.get_or_create(user=request.user)
 
         total = 0
-        
+
         try:
             with transaction.atomic():
                 total += parse_xml_education(researcher, xml_root)
@@ -320,5 +314,3 @@ def researcher_upload_ccv(request):
 
     except Exception as e:
         return JsonResponse({'error': 'Internal server error'}, status=500)
-
-

@@ -555,7 +555,7 @@
           <tbody>
             {% for pd in project_data %}
             {% with project=pd.project %}
-            <tr class="apr-row" tabindex="0" onclick="openModal({{ forloop.counter0 }})" onkeydown="if(event.key==='Enter')openModal({{ forloop.counter0 }})">
+            <tr class="apr-row" tabindex="0">
               <td>
                 <div class="row-title">
                   <span class="active-dot"></span>
@@ -586,11 +586,11 @@
 
       <!-- Pagination -->
       <div class="apr-pagination">
-        <button id="prev-btn" onclick="previousPage()">
+        <button id="prev-btn">
           <i class="bi bi-chevron-left"></i> Previous
         </button>
         <span class="page-info" id="page-info">Page 1 of 1</span>
-        <button id="next-btn" onclick="nextPage()">
+        <button id="next-btn">
           Next <i class="bi bi-chevron-right"></i>
         </button>
       </div>
@@ -609,14 +609,14 @@
               <h2>{{ project.title }}</h2>
               <div class="modal-pi">PI: {{ pd.pi_name }}</div>
             </div>
-            <button class="modal-close" onclick="closeModal()" aria-label="Close">&times;</button>
+            <button class="modal-close" aria-label="Close">&times;</button>
           </div>
 
           <!-- Tabs -->
           <div class="modal-tabs">
-            <button class="modal-tab active" onclick="switchTab(this, 'overview-{{ forloop.counter0 }}')">Overview</button>
-            <button class="modal-tab" onclick="switchTab(this, 'people-{{ forloop.counter0 }}')">People</button>
-            <button class="modal-tab" onclick="switchTab(this, 'outputs-{{ forloop.counter0 }}')">Outputs</button>
+            <button class="modal-tab active" data-pane="overview-{{ forloop.counter0 }}">Overview</button>
+            <button class="modal-tab" data-pane="people-{{ forloop.counter0 }}">People</button>
+            <button class="modal-tab" data-pane="outputs-{{ forloop.counter0 }}">Outputs</button>
           </div>
 
           <!-- Tab content -->
@@ -813,100 +813,7 @@
   </div>
 
   <script src="{% static 'js/dashboard.js' %}"></script>
-  <script>
-    /* ── Pagination ─────────────────────────────────────────── */
-    const ITEMS_PER_PAGE = 10;
-    let currentPage   = 1;
-    let allRows        = [];
-    let filteredRows   = [];
-
-    function previousPage() {
-      if (currentPage > 1) { currentPage--; displayPage(); }
-    }
-
-    function nextPage() {
-      if (currentPage < Math.ceil(filteredRows.length / ITEMS_PER_PAGE)) {
-        currentPage++;
-        displayPage();
-      }
-    }
-
-    function displayPage() {
-      const start = (currentPage - 1) * ITEMS_PER_PAGE;
-      const end   = start + ITEMS_PER_PAGE;
-
-      // Hide all rows first
-      allRows.forEach(r => r.style.display = 'none');
-
-      // Show only current page rows with staggered fade
-      filteredRows.slice(start, end).forEach((r, i) => {
-        r.style.display = '';
-        r.style.opacity = '0';
-        r.style.transform = 'translateY(6px)';
-        setTimeout(() => {
-          r.style.transition = 'opacity 0.3s ease, transform 0.3s ease';
-          r.style.opacity = '1';
-          r.style.transform = 'translateY(0)';
-        }, i * 40);
-      });
-
-      // Update pagination controls
-      const totalPages = Math.ceil(filteredRows.length / ITEMS_PER_PAGE) || 1;
-      document.getElementById('page-info').textContent = `Page ${currentPage} of ${totalPages}`;
-      document.getElementById('prev-btn').disabled = currentPage === 1;
-      document.getElementById('next-btn').disabled = currentPage >= totalPages;
-
-      // Scroll table into view
-      document.querySelector('.apr-table-wrap')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
-    }
-
-    /* ── Modal logic ────────────────────────────────────────── */
-    function openModal(index) {
-      closeModal();
-      const modal = document.getElementById(`modal-${index}`);
-      if (modal) {
-        modal.classList.add('active');
-        document.body.style.overflow = 'hidden';
-      }
-    }
-
-    function closeModal() {
-      document.querySelectorAll('.modal-overlay.active').forEach(m => {
-        m.classList.remove('active');
-      });
-      document.body.style.overflow = '';
-    }
-
-    // Close on overlay click
-    document.querySelectorAll('.modal-overlay').forEach(overlay => {
-      overlay.addEventListener('click', (e) => {
-        if (e.target === overlay) closeModal();
-      });
-    });
-
-    // Close on Escape
-    document.addEventListener('keydown', (e) => {
-      if (e.key === 'Escape') closeModal();
-    });
-
-    /* ── Tab switching ──────────────────────────────────────── */
-    function switchTab(btn, paneId) {
-      const tabBar = btn.closest('.modal-tabs');
-      const body   = btn.closest('.modal-panel').querySelector('.modal-body');
-
-      tabBar.querySelectorAll('.modal-tab').forEach(t => t.classList.remove('active'));
-      btn.classList.add('active');
-
-      body.querySelectorAll('.tab-pane').forEach(p => p.classList.remove('active'));
-      document.getElementById(paneId).classList.add('active');
-    }
-
-    /* ── Init on load ───────────────────────────────────────── */
-    document.addEventListener('DOMContentLoaded', () => {
-      allRows      = Array.from(document.querySelectorAll('.apr-row'));
-      filteredRows = [...allRows];
-      displayPage();
-    });
-  </script>
+  <script src="{% static 'js/pagination.js' %}"></script>
+  <script src="{% static 'js/active_projects_report.js' %}"></script>
 </body>
 </html>

@@ -4,130 +4,188 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <title>Activity Report</title>
+  <title>Director Report</title>
   <link rel="icon" href="{% static 'assets/IBE-logo.png' %}">
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css">
   <link rel="stylesheet" href="{% static 'css/dashboard.css' %}">
   <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+
   <style>
     :root {
       --red: #C8102E; --red-dark: #9e0c24; --red-pale: #fff5f6;
       --ink: #1a1a2e; --muted: #6b7280; --light: #9ca3af;
       --border: #e5e7eb; --surface: #f9fafb; --white: #ffffff;
-      --tbl-head-size: 15px;
-      --tbl-body-size: 17px;
-      --tbl-meta-size: 15px;
+      --tbl-head-size: 13px;
+      --tbl-body-size: 15px;
+      --tbl-meta-size: 13px;
     }
 
-    .report-shell { font-family: 'DM Sans', sans-serif; width: 1500px; max-width: 1700px; margin: 0 auto; }
+    .report-shell { font-family: 'DM Sans', sans-serif; width: 1550px; max-width: 1700px; margin: 0 auto; }
 
     /* ── Header ─────────────────────────── */
     .report-top {
       display: flex; justify-content: space-between; align-items: center;
-      padding-bottom: 20px; margin-bottom: 24px;
+      padding-bottom: 20px; margin-bottom: 22px;
       border-bottom: 1px solid var(--border); flex-wrap: wrap; gap: 12px;
     }
-    .report-top h1 {
-      font-size: 24px; font-weight: 700; color: var(--ink); margin: 0;
-      display: flex; align-items: center; gap: 10px;
+    .report-top-left { display: flex; align-items: center; gap: 16px; }
+    .report-icon-tile {
+      width: 52px; height: 52px; border-radius: 12px;
+      background: var(--red-pale);
+      display: flex; align-items: center; justify-content: center; flex-shrink: 0;
     }
-    .report-top h1 i { color: var(--red); font-size: 22px; }
-    .report-top .subtitle { font-size: 16px; color: var(--muted); margin-top: 4px; }
+    .report-icon-tile i { color: var(--red); font-size: 24px; }
+    .report-top h1 {
+      font-size: 22px; font-weight: 600; color: var(--ink); margin: 0; line-height: 1.2;
+    }
+    .report-top .subtitle { font-size: 13px; color: var(--muted); margin-top: 4px; }
     .btn-export {
       display: inline-flex; align-items: center; gap: 6px;
-      background: var(--white); color: var(--red); border: 1.5px solid var(--red);
-      border-radius: 8px; padding: 8px 16px; font-size: 16px; font-weight: 600;
-      text-decoration: none; transition: background 0.2s;
+      background: var(--red); color: #fff; border: 1px solid var(--red);
+      border-radius: 8px; padding: 9px 16px; font-size: 13px; font-weight: 600;
+      text-decoration: none; transition: background 0.15s;
     }
-    .btn-export:hover { background: var(--red-pale); }
+    .btn-export:hover { background: var(--red-dark); color: #fff; }
 
-    /* ── Filter bar ────────────────────── */
-    .filter-row {
-      display: flex; gap: 10px; flex-wrap: wrap; align-items: flex-end;
-      margin-bottom: 24px;
+    /* ── Tabs (underline style) ────────── */
+    .tab-row {
+      display: flex; gap: 2px; margin-bottom: 0;
+      border-bottom: 1px solid var(--border);
     }
-    .filter-row select {
-      border: 1px solid var(--border); border-radius: 8px; padding: 8px 12px;
-      font-size: 16px; color: var(--ink); background: var(--white);
-      min-width: 140px; outline: none; font-family: inherit;
+    .tab-btn {
+      padding: 12px 4px; margin-right: 22px;
+      background: transparent; border: none; border-bottom: 2px solid transparent;
+      font-size: 14px; font-weight: 500; color: var(--muted); cursor: pointer;
+      font-family: inherit; transition: all 0.15s;
+      display: flex; align-items: center; gap: 8px;
+      margin-bottom: -1px;
+      text-decoration: none;
+      box-sizing: border-box;
     }
-    .filter-row select:focus { border-color: var(--red); }
-    .filter-row .btn-apply {
-      background: var(--red); color: #fff; border: none; border-radius: 8px;
-      padding: 8px 16px; font-size: 16px; font-weight: 600; cursor: pointer;
+    .tab-btn:hover { color: var(--ink); }
+    .tab-btn.active {
+      color: var(--red); border-bottom-color: var(--red); font-weight: 600;
     }
-    .filter-row .btn-apply:hover { background: var(--red-dark); }
+    .tab-count {
+      background: #f3f4f6; color: var(--muted);
+      border-radius: 10px; padding: 1px 8px; font-size: 11px; font-weight: 600;
+    }
+    .tab-btn.active .tab-count { background: var(--red-pale); color: var(--red); }
+    .tab-panel { display: none; padding-top: 20px; }
+    .tab-panel.active { display: block; }
+
+    /* ── Toolbar (unified filter row) ──── */
+    .toolbar {
+      display: flex; align-items: center; gap: 10px; flex-wrap: wrap;
+      padding: 10px 12px; background: var(--surface);
+      border: 1px solid var(--border); border-radius: 8px;
+      margin-bottom: 18px;
+    }
+    .toolbar-label {
+      font-size: 11px; color: var(--muted); font-weight: 600;
+      text-transform: uppercase; letter-spacing: 0.4px; margin-right: 2px;
+    }
+    .toolbar select {
+      border: 1px solid var(--border); border-radius: 6px; padding: 6px 10px;
+      font-size: 13px; color: var(--ink); background: var(--white);
+      outline: none; font-family: inherit; cursor: pointer;
+    }
+    .toolbar select:focus { border-color: var(--red); }
+    .toolbar .btn-apply {
+      background: var(--red); color: #fff; border: none; border-radius: 6px;
+      padding: 6px 14px; font-size: 13px; font-weight: 600; cursor: pointer;
+      font-family: inherit; display: inline-flex; align-items: center; gap: 5px;
+    }
+    .toolbar .btn-apply:hover { background: var(--red-dark); }
+    .toolbar-spacer { flex: 1; }
+    .toolbar-form { display: contents; }
+
+    /* Segmented view toggle inside toolbar */
+    .seg-toggle {
+      display: inline-flex; border: 1px solid var(--border); border-radius: 6px;
+      overflow: hidden; background: var(--white);
+    }
+    .seg-toggle a {
+      padding: 6px 12px; font-size: 13px; font-weight: 500;
+      text-decoration: none; color: var(--muted);
+      display: inline-flex; align-items: center; gap: 5px;
+      transition: all 0.15s;
+    }
+    .seg-toggle a:hover { color: var(--ink); }
+    .seg-toggle a.active {
+      background: var(--red); color: #fff; font-weight: 600;
+    }
 
     /* ── KPI cards ──────────────────────── */
     .kpi-row {
-      display: grid; grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
-      gap: 12px; margin-bottom: 24px;
+      display: grid; grid-template-columns: repeat(auto-fit, minmax(130px, 1fr));
+      gap: 10px; margin-bottom: 22px;
     }
     .kpi {
       background: var(--white); border: 1px solid var(--border); border-radius: 10px;
-      padding: 14px 16px; text-align: center;
+      padding: 14px 16px; position: relative; overflow: hidden;
     }
-    .kpi-val { font-size: 24px; font-weight: 700; color: var(--red); line-height: 1.1; }
-    .kpi-lbl { font-size: 16px; font-weight: 600; color: var(--muted); text-transform: uppercase; letter-spacing: 0.5px; margin-top: 6px; }
-    .kpi.blue .kpi-val { color: #1d4ed8; }
-    .kpi.green .kpi-val { color: #059669; }
-    .kpi.amber .kpi-val { color: #d97706; }
-    .kpi.purple .kpi-val { color: #7c3aed; }
+    .kpi::before {
+      content: ''; position: absolute; top: 0; left: 0; right: 0;
+      height: 3px; background: var(--red);
+    }
+    .kpi.blue::before   { background: #1d4ed8; }
+    .kpi.green::before  { background: #059669; }
+    .kpi.amber::before  { background: #d97706; }
+    .kpi.purple::before { background: #7c3aed; }
+    .kpi.pink::before   { background: #9d174d; }
+    .kpi-lbl {
+      font-size: 11px; font-weight: 600; color: var(--muted);
+      text-transform: uppercase; letter-spacing: 0.5px;
+    }
+    .kpi-val {
+      font-size: 26px; font-weight: 600; color: var(--ink);
+      line-height: 1.1; margin-top: 6px;
+    }
 
-    /* ── Tabs ───────────────────────────── */
-    .tab-row { display: flex; gap: 5px; margin-bottom: 20px; }
-    .tab-btn {
-      padding: 10px 20px; border: 1px solid var(--border); background: var(--surface);
-      font-size: 16px; font-weight: 600; color: var(--muted); cursor: pointer;
-      border-radius: 8px; font-family: inherit; transition: all 0.15s;
-      display: flex; align-items: center; gap: 8px;
-    }
-    .tab-btn:hover { color: var(--red); border-color: var(--red); }
-    .tab-btn.active { background: var(--red); color: #fff; border-color: var(--red); }
-    .tab-count {
-      background: rgba(255,255,255,0.2); border-radius: 10px;
-      padding: 1px 8px; font-size: 15px; font-weight: 700;
-    }
-    .tab-btn:not(.active) .tab-count { background: #f3f4f6; color: var(--muted); }
-    .tab-panel { display: none; }
-    .tab-panel.active { display: block; }
-
-    /* ── Collapsible sections ──────────── */
+    /* ── Section card ───────────────────── */
     .report-section {
-      margin-bottom: 20px; background: var(--white);
-      border: 1px solid var(--border); border-radius: 12px; overflow: hidden;
+      margin-bottom: 18px; background: var(--white);
+      border: 1px solid var(--border); border-radius: 10px; overflow: hidden;
     }
     .section-header {
       display: flex; justify-content: space-between; align-items: center;
-      padding: 16px 20px; cursor: pointer; user-select: none;
-      transition: background 0.15s;
+      padding: 14px 18px; cursor: pointer; user-select: none;
+      transition: background 0.15s; border-bottom: 1px solid var(--border);
     }
     .section-header:hover { background: var(--surface); }
-    .section-header h2 {
-      font-size: 15px; font-weight: 700; color: var(--red); margin: 0;
+    .report-section.collapsed .section-header { border-bottom-color: transparent; }
+    .section-title {
+      display: flex; align-items: center; gap: 10px;
+      font-size: 13px; font-weight: 600; color: var(--ink); margin: 0;
       text-transform: uppercase; letter-spacing: 0.5px;
-      display: flex; align-items: center; gap: 8px;
     }
-    .section-header h2 i { font-size: 16px; }
-    .section-chevron { font-size: 14px; color: var(--light); transition: transform 0.2s; }
+    .section-title i { color: var(--red); font-size: 14px; }
+    .section-title-count {
+      background: #f3f4f6; color: var(--muted);
+      padding: 1px 8px; border-radius: 10px;
+      font-size: 11px; font-weight: 600; letter-spacing: 0;
+      text-transform: none;
+    }
+    .section-chevron { font-size: 12px; color: var(--light); transition: transform 0.2s; }
     .report-section.collapsed .section-body { display: none; }
     .report-section.collapsed .section-chevron { transform: rotate(-90deg); }
-    .section-body { padding: 0 20px 20px; }
+    .section-body { padding: 0; }
 
     /* ── Tables ─────────────────────────── */
     .tbl { width: 100%; border-collapse: collapse; }
     .tbl thead { background: var(--surface); }
     .tbl th {
-      padding: 10px 14px; text-align: left; font-size: var(--tbl-head-size); font-weight: 700;
+      padding: 11px 16px; text-align: left; font-size: var(--tbl-head-size); font-weight: 600;
       color: var(--muted); text-transform: uppercase; letter-spacing: 0.4px;
       border-bottom: 1px solid var(--border);
     }
     .tbl td {
-      padding: 10px 14px; font-size: var(--tbl-body-size); color: var(--ink);
+      padding: 12px 16px; font-size: var(--tbl-body-size); color: var(--ink);
       border-bottom: 1px solid #f3f4f6; vertical-align: middle;
     }
     .tbl tbody tr:last-child td { border-bottom: none; }
-    .tbl tbody tr:hover td { background: #fefefe; }
+    .tbl tbody tr:hover td { background: #fafbfc; }
 
     .scroll-table { max-height: 600px; overflow-y: auto; scrollbar-width: thin; }
     .scroll-table::-webkit-scrollbar { width: 6px; }
@@ -135,8 +193,8 @@
 
     /* ── Badges ─────────────────────────── */
     .cat-badge {
-      display: inline-block; padding: 3px 8px; border-radius: 6px;
-      font-size: 14px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.3px;
+      display: inline-block; padding: 3px 8px; border-radius: 5px;
+      font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.3px;
     }
     .cat-conference             { background: #dbeafe; color: #1d4ed8; }
     .cat-knowledge_mobilization { background: #dcfce7; color: #166534; }
@@ -144,30 +202,32 @@
     .cat-academic               { background: #ede9fe; color: #5b21b6; }
     .cat-other                  { background: #f3f4f6; color: #6b7280; }
     .role-badge {
-      display: inline-block; padding: 2px 7px; border-radius: 8px;
-      font-size: 15px; font-weight: 700;
+      display: inline-block; padding: 2px 7px; border-radius: 4px;
+      font-size: 11px; font-weight: 600;
     }
     .role-student    { background: #fce7f3; color: #9d174d; }
     .role-researcher { background: #e0f2fe; color: #0369a1; }
     .status-badge {
-      display: inline-block; padding: 3px 8px; border-radius: 6px;
-      font-size: 15px; font-weight: 700;
+      display: inline-block; padding: 3px 8px; border-radius: 5px;
+      font-size: 11px; font-weight: 600;
     }
     .st-awarded   { background: #dcfce7; color: #166534; }
     .st-submitted { background: #fef3c7; color: #92400e; }
     .st-rejected  { background: #fee2e2; color: #991b1b; }
-    .amt { color: var(--red); font-weight: 700; }
+    .amt { color: var(--red); font-weight: 700; font-size: 14px; }
 
     /* ── Pagination ─────────────────────── */
     .pager {
       display: flex; justify-content: space-between; align-items: center;
-      padding: 14px 0; font-size: 15px; color: var(--muted);
+      padding: 14px 18px; font-size: 13px; color: var(--muted);
+      border-top: 1px solid var(--border); background: var(--surface);
     }
     .pager-btns { display: flex; gap: 4px; }
     .pg-btn {
       border: 1px solid var(--border); background: var(--white); border-radius: 6px;
-      padding: 5px 11px; cursor: pointer; font-size: 16px; text-decoration: none;
+      padding: 5px 11px; cursor: pointer; font-size: 13px; text-decoration: none;
       color: var(--ink); font-family: inherit; transition: all 0.15s;
+      display: inline-flex; align-items: center; gap: 4px;
     }
     .pg-btn:hover { border-color: var(--red); color: var(--red); }
     .pg-btn.active { background: var(--red); color: #fff; border-color: var(--red); }
@@ -182,8 +242,11 @@
       .report-shell { padding: 0 12px; }
       .kpi-row { grid-template-columns: repeat(2, 1fr); }
       .tab-row { flex-wrap: wrap; }
+      .toolbar { flex-direction: column; align-items: stretch; }
+      .toolbar-spacer { display: none; }
     }
 
+    /* ── Expandable rows ── */
     .project-summary-row {
       cursor: pointer;
       transition: background 0.15s;
@@ -191,28 +254,17 @@
     .project-summary-row:hover td {
       background: #fef9f9 !important;
     }
-    .project-summary-row td:first-child {
-      width: 50%;
-      border-left: 3px solid transparent;
-      transition: border-color 0.15s;
-    }
-
-    /* ── Detail row ── */
     .detail-expanded-row td {
       background: var(--surface) !important;
       border-left: 3px solid var(--red);
       border-bottom: 2px solid var(--border);
     }
-
-    /* ── Detail grid inside expanded row ── */
     .detail-grid {
       display: grid;
       grid-template-columns: 1fr 1fr;
       gap: 16px;
     }
-    .detail-grid-full {
-      grid-column: 1 / -1;
-    }
+    .detail-grid-full { grid-column: 1 / -1; }
     .detail-grid-label {
       font-size: 10px;
       font-weight: 700;
@@ -226,8 +278,6 @@
       color: var(--ink);
       line-height: 1.5;
     }
-
-    
   </style>
 </head>
 <body>
@@ -236,41 +286,41 @@
   <div class="dashboard-main">
     <div class="report-shell">
 
-      <!-- Header -->
+      <!-- ═══ Header ═══ -->
       <div class="report-top">
-        <div>
-          <h1><i class="bi bi-clipboard-data"></i> Director Report</h1>
-          <div class="subtitle">Academic Year {{ year_label }}</div>
+        <div class="report-top-left">
+          <div class="report-icon-tile">
+            <i class="bi bi-clipboard-data"></i>
+          </div>
+          <div>
+            <h1>Director Report</h1>
+            <div class="subtitle">Academic Year {{ year_label }}</div>
+          </div>
         </div>
         <a href="?{{ export_params }}&export=csv" class="btn-export">
           <i class="bi bi-download"></i> Export CSV
         </a>
       </div>
 
-      <!-- Year filter -->
-      <form method="GET" class="filter-row">
-        <input type="hidden" name="tab" value="{{ active_tab }}">
-        <select name="year">
-          {% for y in year_options %}
-          <option value="{{ y.value }}" {% if y.value == selected_year %}selected{% endif %}>{{ y.label }}</option>
-          {% endfor %}
-        </select>
-        <button type="submit" class="btn-apply"><i class="bi bi-funnel"></i> Apply</button>
-      </form>
-
-      <!-- Tabs -->
+      <!-- ═══ Tabs (AJAX-switching buttons) ═══ -->
       <div class="tab-row">
-        <button class="tab-btn {% if active_tab == 'activities' %}active{% endif %}"
+        <button type="button"
+                class="tab-btn {% if active_tab == 'activities' %}active{% endif %}"
+                data-tab="activities"
                 onclick="switchReportTab('activities')">
           <i class="bi bi-calendar-event"></i> Activities
           <span class="tab-count">{{ total_count }}</span>
         </button>
-        <button class="tab-btn {% if active_tab == 'publications' %}active{% endif %}"
+        <button type="button"
+                class="tab-btn {% if active_tab == 'publications' %}active{% endif %}"
+                data-tab="publications"
                 onclick="switchReportTab('publications')">
           <i class="bi bi-journal-text"></i> Publications
           <span class="tab-count">{{ pub_count }}</span>
         </button>
-        <button class="tab-btn {% if active_tab == 'grants' %}active{% endif %}"
+        <button type="button"
+                class="tab-btn {% if active_tab == 'grants' %}active{% endif %}"
+                data-tab="grants"
                 onclick="switchReportTab('grants')">
           <i class="bi bi-cash-coin"></i> Grants
           <span class="tab-count">{{ grant_count }}</span>
@@ -280,10 +330,15 @@
       <!-- ═══ TAB 1: ACTIVITIES ═══ -->
       <div id="panel-activities" class="tab-panel {% if active_tab == 'activities' %}active{% endif %}">
 
-        <!-- Activity filters -->
-        <form method="GET" class="filter-row">
-          <input type="hidden" name="year" value="{{ selected_year }}">
+        <!-- Unified toolbar: year + filters + view toggle -->
+        <form method="GET" class="toolbar">
           <input type="hidden" name="tab" value="activities">
+          <span class="toolbar-label">Filters</span>
+          <select name="year">
+            {% for y in year_options %}
+            <option value="{{ y.value }}" {% if y.value == selected_year %}selected{% endif %}>{{ y.label }}</option>
+            {% endfor %}
+          </select>
           <select name="category">
             <option value="">All Types</option>
             <option value="conference"             {% if selected_category == 'conference'             %}selected{% endif %}>Conference</option>
@@ -297,41 +352,43 @@
             <option value="researcher" {% if selected_user_type == 'researcher' %}selected{% endif %}>Researchers</option>
             <option value="student"    {% if selected_user_type == 'student'    %}selected{% endif %}>Students</option>
           </select>
-          <button type="submit" class="btn-apply"><i class="bi bi-funnel"></i> Filter</button>
+          <button type="submit" class="btn-apply"><i class="bi bi-funnel"></i> Apply</button>
+          <div class="toolbar-spacer"></div>
+          <div class="seg-toggle">
+            <a href="?year={{ selected_year }}&tab=activities&category={{ selected_category }}&user_type={{ selected_user_type }}&group=0"
+               class="{% if not group_by_conf %}active{% endif %}">
+              <i class="bi bi-list-ul"></i> Individual
+            </a>
+            <a href="?year={{ selected_year }}&tab=activities&category={{ selected_category }}&user_type={{ selected_user_type }}&group=1"
+               class="{% if group_by_conf %}active{% endif %}">
+              <i class="bi bi-collection"></i> By Conference
+            </a>
+          </div>
         </form>
 
         <!-- KPIs -->
         <div class="kpi-row">
-          <div class="kpi"><div class="kpi-val">{{ total_count }}</div><div class="kpi-lbl">Total</div></div>
-          <div class="kpi blue"><div class="kpi-val">{{ conference_count }}</div><div class="kpi-lbl">Conference</div></div>
-          <div class="kpi green"><div class="kpi-val">{{ km_count }}</div><div class="kpi-lbl">KM</div></div>
-          <div class="kpi amber"><div class="kpi-val">{{ media_count }}</div><div class="kpi-lbl">Media</div></div>
-          <div class="kpi purple"><div class="kpi-val">{{ researcher_count }}</div><div class="kpi-lbl">Researchers</div></div>
-          <div class="kpi"><div class="kpi-val">{{ student_count }}</div><div class="kpi-lbl">Students</div></div>
+          <div class="kpi"><div class="kpi-lbl">Total</div><div class="kpi-val">{{ total_count }}</div></div>
+          <div class="kpi blue"><div class="kpi-lbl">Conference</div><div class="kpi-val">{{ conference_count }}</div></div>
+          <div class="kpi green"><div class="kpi-lbl">KM</div><div class="kpi-val">{{ km_count }}</div></div>
+          <div class="kpi amber"><div class="kpi-lbl">Media</div><div class="kpi-val">{{ media_count }}</div></div>
+          <div class="kpi purple"><div class="kpi-lbl">Researchers</div><div class="kpi-val">{{ researcher_count }}</div></div>
+          <div class="kpi pink"><div class="kpi-lbl">Students</div><div class="kpi-val">{{ student_count }}</div></div>
           {% for obj in objective_counts %}
           <div class="kpi">
-            <div class="kpi-val">{{ obj.count }}</div>
             <div class="kpi-lbl">{{ obj.name }}</div>
+            <div class="kpi-val">{{ obj.count }}</div>
           </div>
           {% endfor %}
         </div>
 
-        <!-- View toggle -->
-        <div style="display:flex;justify-content:flex-end;gap:8px;margin-bottom:16px;">
-          <a href="?year={{ selected_year }}&tab=activities&category={{ selected_category }}&user_type={{ selected_user_type }}&group=0"
-            class="pg-btn {% if not group_by_conf %}active{% endif %}">
-            <i class="bi bi-list-ul"></i> Individual
-          </a>
-          <a href="?year={{ selected_year }}&tab=activities&category={{ selected_category }}&user_type={{ selected_user_type }}&group=1"
-            class="pg-btn {% if group_by_conf %}active{% endif %}">
-            <i class="bi bi-collection"></i> By Conference
-          </a>
-        </div>
-
-        <!-- Table -->
+        <!-- Records -->
         <div class="report-section">
           <div class="section-header" onclick="this.parentElement.classList.toggle('collapsed')">
-            <h2><i class="bi bi-table"></i> Activity Records</h2>
+            <div class="section-title">
+              <i class="bi bi-table"></i> Activity Records
+              <span class="section-title-count">{{ total_count }}</span>
+            </div>
             <i class="bi bi-chevron-down section-chevron"></i>
           </div>
           <div class="section-body">
@@ -357,7 +414,7 @@
                     <td>
                       <div style="display:flex;align-items:center;gap:8px;">
                         <i class="bi bi-chevron-right" id="conf-chevron-{{ forloop.counter }}"
-                          style="font-size:11px;color:var(--muted);transition:transform 0.2s;flex-shrink:0; margin-right: 10px;"></i>
+                          style="font-size:11px;color:var(--muted);transition:transform 0.2s;flex-shrink:0;margin-right:8px;"></i>
                         <div>
                           <strong>{{ conf.name }}</strong>
                           {% if conf.year %}<span style="color:var(--muted);font-size:12px;margin-left:6px;">{{ conf.year }}</span>{% endif %}
@@ -378,15 +435,15 @@
 
                   {% if conf.attendees %}
                   <tr id="conf-{{ forloop.counter }}" style="display:none;">
-                    <td colspan="6" style="background:var(--surface);padding:12px 20px;">
-                      <div style="font-size:12px;color:var(--muted);margin-bottom:8px;font-weight:600;">
-                        ATTENDEES
+                    <td colspan="6" style="background:var(--surface);padding:14px 20px;border-left:3px solid var(--red);">
+                      <div style="font-size:10px;color:var(--muted);margin-bottom:8px;font-weight:700;text-transform:uppercase;letter-spacing:0.5px;">
+                        Attendees
                       </div>
                       <div style="display:flex;flex-wrap:wrap;gap:8px;">
                         {% for a in conf.attendees %}
                         <span style="
                           display:inline-flex;align-items:center;gap:5px;
-                          padding:4px 10px;border-radius:20px;font-size:14px;font-weight:600;
+                          padding:4px 10px;border-radius:20px;font-size:12px;font-weight:600;
                           background:{% if a.user_type == 'student' %}#fce7f3{% else %}#e0f2fe{% endif %};
                           color:{% if a.user_type == 'student' %}#9d174d{% else %}#0369a1{% endif %};
                         ">
@@ -408,7 +465,6 @@
                     </td>
                   </tr>
                   {% endif %}
-
                   {% endfor %}
                 </tbody>
               </table>
@@ -430,12 +486,11 @@
                 </thead>
                 <tbody>
                   {% for a in activities %}
-                  <!-- Summary row -->
                   <tr class="project-summary-row" onclick="toggleActDirRow('adir-{{ forloop.counter }}')">
                     <td>
                       <div style="display:flex;align-items:center;gap:8px;">
                         <i class="bi bi-chevron-right" id="adir-chevron-{{ forloop.counter }}"
-                          style="font-size:11px;color:var(--muted);transition:transform 0.2s;flex-shrink:0; margin-right: 10px;"></i>
+                          style="font-size:11px;color:var(--muted);transition:transform 0.2s;flex-shrink:0;margin-right:8px;"></i>
                         <div>
                           <strong>{{ a.title }}</strong>
                           {% if a.conference %}
@@ -457,7 +512,6 @@
                     <td style="white-space:nowrap;">{{ a.date|date:"M d, Y" }}</td>
                   </tr>
 
-                  <!-- Detail row -->
                   <tr id="adir-{{ forloop.counter }}" class="detail-expanded-row" style="display:none;">
                     <td colspan="4" style="padding:16px 20px;">
                       <div class="detail-grid">
@@ -532,7 +586,6 @@
                 </tbody>
               </table>
             </div>
-            <!-- Pagination -->
             <div class="pager">
               <span>Showing {{ page_start }}–{{ page_end }} of {{ total_count }}</span>
               <div class="pager-btns">
@@ -563,10 +616,14 @@
       <!-- ═══ TAB 2: PUBLICATIONS ═══ -->
       <div id="panel-publications" class="tab-panel {% if active_tab == 'publications' %}active{% endif %}">
 
-        <!-- Pub filters -->
-        <form method="GET" class="filter-row">
-          <input type="hidden" name="year" value="{{ selected_year }}">
+        <form method="GET" class="toolbar">
           <input type="hidden" name="tab" value="publications">
+          <span class="toolbar-label">Filters</span>
+          <select name="year">
+            {% for y in year_options %}
+            <option value="{{ y.value }}" {% if y.value == selected_year %}selected{% endif %}>{{ y.label }}</option>
+            {% endfor %}
+          </select>
           <select name="pub_type">
             <option value="">All Types</option>
             <option value="journal"    {% if selected_pub_type == 'journal'    %}selected{% endif %}>Journal Article</option>
@@ -574,16 +631,19 @@
             <option value="chapter"    {% if selected_pub_type == 'chapter'    %}selected{% endif %}>Book Chapter</option>
             <option value="patent"     {% if selected_pub_type == 'patent'     %}selected{% endif %}>Patent</option>
           </select>
-          <button type="submit" class="btn-apply"><i class="bi bi-funnel"></i> Filter</button>
+          <button type="submit" class="btn-apply"><i class="bi bi-funnel"></i> Apply</button>
         </form>
 
         <div class="kpi-row">
-          <div class="kpi"><div class="kpi-val">{{ pub_count }}</div><div class="kpi-lbl">Publications</div></div>
+          <div class="kpi purple"><div class="kpi-lbl">Publications</div><div class="kpi-val">{{ pub_count }}</div></div>
         </div>
 
         <div class="report-section">
           <div class="section-header" onclick="this.parentElement.classList.toggle('collapsed')">
-            <h2><i class="bi bi-journal-text"></i> Publication Records</h2>
+            <div class="section-title">
+              <i class="bi bi-journal-text"></i> Publication Records
+              <span class="section-title-count">{{ pub_count }}</span>
+            </div>
             <i class="bi bi-chevron-down section-chevron"></i>
           </div>
           <div class="section-body">
@@ -595,12 +655,11 @@
                 </thead>
                 <tbody>
                 {% for p in publications %}
-                <!-- Summary row -->
                 <tr class="project-summary-row" onclick="togglePubRow('pub-{{ forloop.counter }}')">
                   <td>
                     <div style="display:flex;align-items:center;gap:8px;">
                       <i class="bi bi-chevron-right" id="pub-chevron-{{ forloop.counter }}"
-                        style="font-size:11px;color:var(--muted);transition:transform 0.2s;flex-shrink:0;margin-right:10px;"></i>
+                        style="font-size:11px;color:var(--muted);transition:transform 0.2s;flex-shrink:0;margin-right:8px;"></i>
                       <div>
                         <strong>{{ p.title|truncatechars:60 }}</strong>
                         {% if p.authors %}<div style="font-size:13px;color:var(--muted);margin-top:3px;">{{ p.authors|truncatechars:50 }}</div>{% endif %}
@@ -614,12 +673,10 @@
                   <td style="white-space:nowrap;">{{ p.publication_date|date:"M d, Y" }}</td>
                 </tr>
 
-                <!-- Detail row -->
                 <tr id="pub-{{ forloop.counter }}" class="detail-expanded-row" style="display:none;">
                   <td colspan="6" style="padding:16px 20px;">
                     <div class="detail-grid">
 
-                      <!-- Full title + authors always shown first -->
                       <div class="detail-grid-full">
                         <div class="detail-grid-label">Full Title</div>
                         <div class="detail-grid-value" style="font-weight:600;">{{ p.title }}</div>
@@ -710,28 +767,36 @@
       <!-- ═══ TAB 3: GRANTS ═══ -->
       <div id="panel-grants" class="tab-panel {% if active_tab == 'grants' %}active{% endif %}">
 
-        <form method="GET" class="filter-row">
-          <input type="hidden" name="year" value="{{ selected_year }}">
+        <form method="GET" class="toolbar">
           <input type="hidden" name="tab" value="grants">
+          <span class="toolbar-label">Filters</span>
+          <select name="year">
+            {% for y in year_options %}
+            <option value="{{ y.value }}" {% if y.value == selected_year %}selected{% endif %}>{{ y.label }}</option>
+            {% endfor %}
+          </select>
           <select name="grant_status">
             <option value="">All Statuses</option>
             <option value="awarded"   {% if selected_status == 'awarded'   %}selected{% endif %}>Awarded</option>
             <option value="submitted" {% if selected_status == 'submitted' %}selected{% endif %}>Submitted</option>
             <option value="rejected"  {% if selected_status == 'rejected'  %}selected{% endif %}>Rejected</option>
           </select>
-          <button type="submit" class="btn-apply"><i class="bi bi-funnel"></i> Filter</button>
+          <button type="submit" class="btn-apply"><i class="bi bi-funnel"></i> Apply</button>
         </form>
 
         <div class="kpi-row">
-          <div class="kpi"><div class="kpi-val">{{ grant_count }}</div><div class="kpi-lbl">Total Grants</div></div>
-          <div class="kpi green"><div class="kpi-val">{{ awarded_count }}</div><div class="kpi-lbl">Awarded</div></div>
-          <div class="kpi amber"><div class="kpi-val">{{ submitted_count }}</div><div class="kpi-lbl">Submitted</div></div>
-          <div class="kpi"><div class="kpi-val">{{ rejected_count }}</div><div class="kpi-lbl">Rejected</div></div>
+          <div class="kpi"><div class="kpi-lbl">Total Grants</div><div class="kpi-val">{{ grant_count }}</div></div>
+          <div class="kpi green"><div class="kpi-lbl">Awarded</div><div class="kpi-val">{{ awarded_count }}</div></div>
+          <div class="kpi amber"><div class="kpi-lbl">Submitted</div><div class="kpi-val">{{ submitted_count }}</div></div>
+          <div class="kpi"><div class="kpi-lbl">Rejected</div><div class="kpi-val">{{ rejected_count }}</div></div>
         </div>
 
         <div class="report-section">
           <div class="section-header" onclick="this.parentElement.classList.toggle('collapsed')">
-            <h2><i class="bi bi-cash-coin"></i> Grant Records</h2>
+            <div class="section-title">
+              <i class="bi bi-cash-coin"></i> Grant Records
+              <span class="section-title-count">{{ grant_count }}</span>
+            </div>
             <i class="bi bi-chevron-down section-chevron"></i>
           </div>
           <div class="section-body">
@@ -743,12 +808,11 @@
                 </thead>
                 <tbody>
                 {% for g in grants %}
-                <!-- Summary row -->
                 <tr class="project-summary-row" onclick="toggleGrantRow('grant-{{ forloop.counter }}')">
                   <td>
                     <div style="display:flex;align-items:center;gap:8px;">
                       <i class="bi bi-chevron-right" id="grant-chevron-{{ forloop.counter }}"
-                        style="font-size:11px;color:var(--muted);transition:transform 0.2s;flex-shrink:0;margin-right:10px;"></i>
+                        style="font-size:11px;color:var(--muted);transition:transform 0.2s;flex-shrink:0;margin-right:8px;"></i>
                       <div>
                         <strong>{{ g.title|truncatechars:60 }}</strong>
                         {% if g.program_name %}
@@ -775,12 +839,10 @@
                   <td style="white-space:nowrap;">{{ g.start_date|date:"M d, Y"|default:"—" }}</td>
                 </tr>
 
-                <!-- Detail row -->
                 <tr id="grant-{{ forloop.counter }}" class="detail-expanded-row" style="display:none;">
                   <td colspan="6" style="padding:16px 20px;">
                     <div class="detail-grid">
 
-                      <!-- Full title always shown first -->
                       <div class="detail-grid-full">
                         <div class="detail-grid-label">Full Title</div>
                         <div class="detail-grid-value" style="font-weight:600;">{{ g.title }}</div>
@@ -869,15 +931,58 @@
 
 <script src="{% static 'js/dashboard.js' %}"></script>
 <script>
-  function switchReportTab(tab) {
+  // ─── AJAX tab switching ───────────────────────────────────
+  async function switchReportTab(tab) {
     document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
-    document.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('active'));
-    document.getElementById(`panel-${tab}`).classList.add('active');
-    document.querySelector(`[onclick="switchReportTab('${tab}')"]`).classList.add('active');
+    document.querySelector(`[data-tab="${tab}"]`)?.classList.add('active');
+
     const url = new URL(window.location.href);
     url.searchParams.set('tab', tab);
-    window.history.replaceState({}, '', url);
+    url.searchParams.delete('page');
+    url.searchParams.delete('pub_page');
+    url.searchParams.delete('grant_page');
+
+    const allPanels = document.querySelectorAll('.tab-panel');
+    allPanels.forEach(p => {
+      p.style.opacity = '0.5';
+      p.style.pointerEvents = 'none';
+    });
+
+    try {
+      const res  = await fetch(url.toString(), { headers: { 'X-Requested-With': 'XMLHttpRequest' } });
+      const html = await res.text();
+      const doc  = new DOMParser().parseFromString(html, 'text/html');
+
+      ['activities', 'publications', 'grants'].forEach(t => {
+        const oldPanel = document.getElementById(`panel-${t}`);
+        const newPanel = doc.getElementById(`panel-${t}`);
+        if (oldPanel && newPanel) oldPanel.innerHTML = newPanel.innerHTML;
+      });
+
+      document.querySelectorAll('.tab-btn').forEach(btn => {
+        const t = btn.dataset.tab;
+        const newBtn = doc.querySelector(`[data-tab="${t}"]`);
+        const oldCount = btn.querySelector('.tab-count');
+        const newCount = newBtn?.querySelector('.tab-count');
+        if (oldCount && newCount) oldCount.textContent = newCount.textContent;
+      });
+
+      document.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('active'));
+      document.getElementById(`panel-${tab}`).classList.add('active');
+
+      window.history.pushState({ tab }, '', url.toString());
+    } catch (err) {
+      window.location.href = url.toString();
+      return;
+    } finally {
+      allPanels.forEach(p => {
+        p.style.opacity = '';
+        p.style.pointerEvents = '';
+      });
+    }
   }
+
+  // ─── Row expand/collapse (per tab) ───────────────────────
   function toggleConfRow(id) {
     const row     = document.getElementById(id);
     const chevron = document.getElementById(`${id.replace('conf-', 'conf-chevron-')}`);
@@ -905,7 +1010,6 @@
       if (chevron) chevron.style.transform = isOpen ? 'rotate(0deg)' : 'rotate(90deg)';
     }
   }
-
   function toggleGrantRow(id) {
     const row     = document.getElementById(id);
     const chevron = document.getElementById(`${id.replace('grant-', 'grant-chevron-')}`);
@@ -915,6 +1019,46 @@
       if (chevron) chevron.style.transform = isOpen ? 'rotate(0deg)' : 'rotate(90deg)';
     }
   }
+
+  // ─── AJAX pagination (intercepts .pg-btn anchor clicks) ──
+  (function() {
+    const SWAP_SELECTOR = '.tab-panel.active';
+
+    document.addEventListener('click', async (e) => {
+      const link = e.target.closest('.pg-btn');
+      if (!link || link.tagName !== 'A' || link.closest('.seg-toggle')) return;
+      if (!link.getAttribute('href')?.startsWith('?')) return;
+
+      e.preventDefault();
+      const url = link.href;
+      const panel = document.querySelector(SWAP_SELECTOR);
+      if (!panel) return;
+
+      panel.style.opacity = '0.5';
+      panel.style.pointerEvents = 'none';
+
+      try {
+        const res  = await fetch(url, { headers: { 'X-Requested-With': 'XMLHttpRequest' } });
+        const html = await res.text();
+        const doc  = new DOMParser().parseFromString(html, 'text/html');
+        const newPanel = doc.querySelector(SWAP_SELECTOR);
+        if (newPanel) {
+          panel.innerHTML = newPanel.innerHTML;
+          window.history.pushState({}, '', url);
+          panel.querySelector('.report-section')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        }
+      } catch (err) {
+        window.location.href = url;
+        return;
+      } finally {
+        panel.style.opacity = '';
+        panel.style.pointerEvents = '';
+      }
+    });
+  })();
+
+  // ─── Browser back/forward ────────────────────────────────
+  window.addEventListener('popstate', () => window.location.reload());
 </script>
 </body>
 </html>
